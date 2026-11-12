@@ -1,0 +1,67 @@
+erDiagram
+    CUSTOMERS ||--o{ LOAN_APPLICATIONS : submits
+    CUSTOMERS ||--o{ CALL_SESSIONS : "takes part in"
+    CALL_SESSIONS ||--|{ CALL_TURNS : contains
+    CALL_SESSIONS ||--o{ LOAN_APPLICATIONS : originates
+    CALL_SESSIONS ||--o{ KHAYA_API_CALLS : uses
+    CUSTOMERS {
+        bigint id PK
+        string full_name "nullable"
+        string phone_number UK "233XXXXXXXXX"
+        string preferred_language "twi ewe eng, nullable - reset to ask again"
+        bigint balance_pesewas
+        string registered_via "panel or voice"
+    }
+    LOAN_APPLICATIONS {
+        bigint id PK
+        string reference UK
+        bigint customer_id FK
+        bigint call_session_id FK "nullable"
+        bigint amount_pesewas
+        int term_months
+        string status
+        bigint next_repayment_pesewas "nullable"
+        date next_repayment_due_on "nullable"
+    }
+    CALL_SESSIONS {
+        bigint id PK
+        uuid uuid UK
+        bigint customer_id FK "nullable"
+        string caller_number
+        string channel "webrtc or ivr"
+        string direction "inbound or outbound"
+        string language "nullable until chosen"
+        string state
+        json context "no-input count, pending amount, term, name"
+        timestamp started_at
+        timestamp ended_at
+    }
+    CALL_TURNS {
+        bigint id PK
+        bigint call_session_id FK
+        string speaker
+        string input_mode "speech keypad text no_input"
+        text text
+        string intent
+        string state_after
+        string audio_path "private caller audio"
+        int recognition_ms
+    }
+    KHAYA_API_CALLS {
+        bigint id PK
+        bigint call_session_id FK
+        string endpoint
+        string language
+        int http_status
+        string error_code
+        int latency_ms
+        timestamp created_at
+    }
+    VOICE_PROMPTS {
+        bigint id PK
+        string key "step, grouped by function in config"
+        string language
+        text text
+        string audio_path "voice-prompts/function/step/language - MP3"
+        string telephony_audio_path "8 kHz WAV for IVR"
+    }

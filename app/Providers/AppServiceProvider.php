@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Services\Khaya\KhayaSpeechRecognizer;
+use App\Services\Speech\FakeSpeechRecognizer;
+use App\Services\Speech\SpeechRecognizer;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -15,7 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(SpeechRecognizer::class, fn (Application $app): SpeechRecognizer => match (config('services.khaya.driver')) {
+            'khaya' => $app->make(KhayaSpeechRecognizer::class),
+            default => new FakeSpeechRecognizer,
+        });
     }
 
     /**

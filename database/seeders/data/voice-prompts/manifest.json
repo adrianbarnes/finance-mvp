@@ -1,0 +1,533 @@
+{
+    "twi": {
+        "agent_unavailable": {
+            "text": "Kafra, yɛn adwumayɛfoɔ nni hɔ seesei. Yɛbɛma wo atumi ne wɔn akasa nkyɛ.",
+            "audio": "agent/agent_unavailable/twi/agent_unavailable.mp3",
+            "telephony_audio": "agent/agent_unavailable/twi/agent_unavailable-8k.wav"
+        },
+        "amount_not_understood": {
+            "text": "Kafra, mante sika dodoɔ no aseɛ.",
+            "audio": "loan_application/amount_not_understood/twi/amount_not_understood.mp3",
+            "telephony_audio": "loan_application/amount_not_understood/twi/amount_not_understood-8k.wav"
+        },
+        "amount_out_of_range": {
+            "text": "Sika a wobɛtumi abɔ bosea fi",
+            "audio": "loan_application/amount_out_of_range/twi/amount_out_of_range.mp3",
+            "telephony_audio": "loan_application/amount_out_of_range/twi/amount_out_of_range-8k.wav"
+        },
+        "anything_else": {
+            "text": "Biribi foforɔ wɔ hɔ a mɛtumi ayɛ ama wo? Ka aane anaa daabi.",
+            "audio": "call/anything_else/twi/anything_else.mp3",
+            "telephony_audio": "call/anything_else/twi/anything_else-8k.wav"
+        },
+        "application_cancelled": {
+            "text": "Ɛyɛ, yɛagyae bosea abisadeɛ no.",
+            "audio": "loan_application/application_cancelled/twi/application_cancelled.mp3",
+            "telephony_audio": "loan_application/application_cancelled/twi/application_cancelled-8k.wav"
+        },
+        "application_status_intro": {
+            "text": "Wo bosea abisadeɛ a ɛtwa toɔ no,",
+            "audio": "application_status/application_status_intro/twi/application_status_intro.mp3",
+            "telephony_audio": "application_status/application_status_intro/twi/application_status_intro-8k.wav"
+        },
+        "application_submitted": {
+            "text": "Yɛanya wo bosea abisadeɛ no. Wo abisadeɛ nɔma ne",
+            "audio": "loan_application/application_submitted/twi/application_submitted.mp3",
+            "telephony_audio": "loan_application/application_submitted/twi/application_submitted-8k.wav"
+        },
+        "ask_amount": {
+            "text": "Sika ahe na wopɛ sɛ wobɔ bosea? Wobɛtumi aka no Borɔfo kasa mu, anaa mia nɔma no na mia hash.",
+            "audio": "loan_application/ask_amount/twi/ask_amount.mp3",
+            "telephony_audio": "loan_application/ask_amount/twi/ask_amount-8k.wav"
+        },
+        "ask_name": {
+            "text": "Yɛsrɛ wo, ka wo din nyinaa.",
+            "audio": "registration/ask_name/twi/ask_name.mp3",
+            "telephony_audio": "registration/ask_name/twi/ask_name-8k.wav"
+        },
+        "ask_term": {
+            "text": "Abosome ahe na wopɛ sɛ wode tua bosea no?",
+            "audio": "loan_application/ask_term/twi/ask_term.mp3",
+            "telephony_audio": "loan_application/ask_term/twi/ask_term-8k.wav"
+        },
+        "balance_is": {
+            "text": "Sika a ɛwɔ wo akawnt mu ne",
+            "audio": "balance/balance_is/twi/balance_is.mp3",
+            "telephony_audio": "balance/balance_is/twi/balance_is-8k.wav"
+        },
+        "confirm_application": {
+            "text": "Wopɛ sɛ wobɔ bosea",
+            "audio": "loan_application/confirm_application/twi/confirm_application.mp3",
+            "telephony_audio": "loan_application/confirm_application/twi/confirm_application-8k.wav"
+        },
+        "confirm_name": {
+            "text": "Wo din ne",
+            "audio": "registration/confirm_name/twi/confirm_name.mp3",
+            "telephony_audio": "registration/confirm_name/twi/confirm_name-8k.wav"
+        },
+        "confirm_name_question": {
+            "text": "Ɛyɛ nokorɛ? Ka aane anaa daabi.",
+            "audio": "registration/confirm_name_question/twi/confirm_name_question.mp3",
+            "telephony_audio": "registration/confirm_name_question/twi/confirm_name_question-8k.wav"
+        },
+        "confirm_question": {
+            "text": "Ɛyɛ nokorɛ? Ka aane anaa daabi.",
+            "audio": "loan_application/confirm_question/twi/confirm_question.mp3",
+            "telephony_audio": "loan_application/confirm_question/twi/confirm_question-8k.wav"
+        },
+        "goodbye": {
+            "text": "Meda wo ase sɛ wofrɛɛ yɛn. Nante yie.",
+            "audio": "call/goodbye/twi/goodbye.mp3",
+            "telephony_audio": "call/goodbye/twi/goodbye-8k.wav"
+        },
+        "greeting": {
+            "text": "Akwaaba,",
+            "audio": "call/greeting/twi/greeting.mp3",
+            "telephony_audio": "call/greeting/twi/greeting-8k.wav"
+        },
+        "main_menu": {
+            "text": "Ɛdeɛn na wopɛ sɛ meyɛ ma wo? Wobɛtumi abisa wo sika dodoɔ, abɔ bosea, abisa wo bosea abisadeɛ ho nsɛm, anaa abisa sika a ɛsɛ sɛ wotua. Anaa mia 1 ma sika dodoɔ, 2 ma bosea, 3 ma abisadeɛ ho nsɛm, 4 ma sika a ɛsɛ sɛ wotua, 8 sɛ wopɛ sɛ wo ne obi kasa, 0 de wie.",
+            "audio": "call/main_menu/twi/main_menu.mp3",
+            "telephony_audio": "call/main_menu/twi/main_menu-8k.wav"
+        },
+        "no_application": {
+            "text": "Wonni bosea abisadeɛ biara.",
+            "audio": "application_status/no_application/twi/no_application.mp3",
+            "telephony_audio": "application_status/no_application/twi/no_application-8k.wav"
+        },
+        "no_repayment_due": {
+            "text": "Wonni bosea biara a ɛsɛ sɛ wotua seesei.",
+            "audio": "repayment/no_repayment_due/twi/no_repayment_due.mp3",
+            "telephony_audio": "repayment/no_repayment_due/twi/no_repayment_due-8k.wav"
+        },
+        "not_understood": {
+            "text": "Kafra, mante aseɛ yie.",
+            "audio": "call/not_understood/twi/not_understood.mp3",
+            "telephony_audio": "call/not_understood/twi/not_understood-8k.wav"
+        },
+        "offer_registration": {
+            "text": "Akwaaba! Yɛnhunu wo nɔma yi wɔ yɛn nkyerɛwee mu. Wopɛ sɛ yɛkyerɛw wo din? Ka aane anaa mia 1. Sɛ wompɛ a, ka daabi anaa mia 2.",
+            "audio": "registration/offer_registration/twi/offer_registration.mp3",
+            "telephony_audio": "registration/offer_registration/twi/offer_registration-8k.wav"
+        },
+        "registered": {
+            "text": "Ayekoo! Yɛakyerɛw wo din.",
+            "audio": "registration/registered/twi/registered.mp3",
+            "telephony_audio": "registration/registered/twi/registered-8k.wav"
+        },
+        "repayment_due_is": {
+            "text": "Sika a ɛsɛ sɛ wotua ne",
+            "audio": "repayment/repayment_due_is/twi/repayment_due_is.mp3",
+            "telephony_audio": "repayment/repayment_due_is/twi/repayment_due_is-8k.wav"
+        },
+        "repayment_due_on": {
+            "text": "na ɛsɛ sɛ wotua no",
+            "audio": "repayment/repayment_due_on/twi/repayment_due_on.mp3",
+            "telephony_audio": "repayment/repayment_due_on/twi/repayment_due_on-8k.wav"
+        },
+        "speech_unavailable": {
+            "text": "Kafra, mentumi nte wo nne seesei. Yɛsrɛ wo, fa wo nsa mia nɔma no.",
+            "audio": "call/speech_unavailable/twi/speech_unavailable.mp3",
+            "telephony_audio": "call/speech_unavailable/twi/speech_unavailable-8k.wav"
+        },
+        "status_approved": {
+            "text": "yɛapene so.",
+            "audio": "application_status/status_approved/twi/status_approved.mp3",
+            "telephony_audio": "application_status/status_approved/twi/status_approved-8k.wav"
+        },
+        "status_closed": {
+            "text": "woatua awie. Ayekoo!",
+            "audio": "application_status/status_closed/twi/status_closed.mp3",
+            "telephony_audio": "application_status/status_closed/twi/status_closed-8k.wav"
+        },
+        "status_disbursed": {
+            "text": "yɛde sika no ama wo dada.",
+            "audio": "application_status/status_disbursed/twi/status_disbursed.mp3",
+            "telephony_audio": "application_status/status_disbursed/twi/status_disbursed-8k.wav"
+        },
+        "status_pending": {
+            "text": "ɛretwɛn sɛ yɛbɛhwɛ mu.",
+            "audio": "application_status/status_pending/twi/status_pending.mp3",
+            "telephony_audio": "application_status/status_pending/twi/status_pending-8k.wav"
+        },
+        "status_rejected": {
+            "text": "kafra, yɛntumi mpene so.",
+            "audio": "application_status/status_rejected/twi/status_rejected.mp3",
+            "telephony_audio": "application_status/status_rejected/twi/status_rejected-8k.wav"
+        },
+        "status_under_review": {
+            "text": "yɛrehwɛ mu seesei.",
+            "audio": "application_status/status_under_review/twi/status_under_review.mp3",
+            "telephony_audio": "application_status/status_under_review/twi/status_under_review-8k.wav"
+        },
+        "term_invalid": {
+            "text": "Abosome dodoɔ no nyɛ papa. Ɛsɛ sɛ ɛyɛ",
+            "audio": "loan_application/term_invalid/twi/term_invalid.mp3",
+            "telephony_audio": "loan_application/term_invalid/twi/term_invalid-8k.wav"
+        },
+        "yes_no_hint": {
+            "text": "Yɛsrɛ wo, ka aane anaa daabi. Anaa mia 1 ma aane, 2 ma daabi.",
+            "audio": "call/yes_no_hint/twi/yes_no_hint.mp3",
+            "telephony_audio": "call/yes_no_hint/twi/yes_no_hint-8k.wav"
+        },
+        "choose_language": {
+            "text": "Akwaaba! Sɛ wopɛ Twi a, ka aane anaa mia 1.",
+            "audio": "language/choose_language/twi/choose_language.mp3",
+            "telephony_audio": "language/choose_language/twi/choose_language-8k.wav"
+        }
+    },
+    "ewe": {
+        "ask_term": {
+            "text": "Ɣleti nenie nèdi be yeatsɔ axe fe la?",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "goodbye": {
+            "text": "Akpe be èyɔ mí. Hede nyuie.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "agent_unavailable": {
+            "text": "Taflatse, míaƒe dɔwɔlawo meli fifia o. Àte ŋu aƒo nu kpli wo kpuie.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "amount_not_understood": {
+            "text": "Taflatse, nyemese ga ƒe agbɔsɔsɔ la gɔme o.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "amount_out_of_range": {
+            "text": "Ga si nàte ŋu anyi tso",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "anything_else": {
+            "text": "Nu bubu aɖe li si mate ŋu awɔ na wò? Gblɔ ɛ̃ alo ao.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "application_cancelled": {
+            "text": "Enyo, míeɖe asi le fenyinyi biabia la ŋu.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "application_status_intro": {
+            "text": "Wò fenyinyi biabia mamlɛtɔ,",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "application_submitted": {
+            "text": "Míexɔ wò fenyinyi biabia. Wò biabia ƒe xexlẽdzesie nye",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "ask_amount": {
+            "text": "Ga ade nèdi be yeanyi? Àte ŋu agblɔe le Eŋlisigbe me, alo zi xexlẽdzesi la eye nàzi hash.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "ask_name": {
+            "text": "Taflatse, gblɔ wò ŋkɔ blibo.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "balance_is": {
+            "text": "Ga si le wò akɔnta me enye",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "choose_language": {
+            "text": "Ne èdi Eʋegbe la, gblɔ ɛ̃ alo zi 2.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "confirm_application": {
+            "text": "Èdi be yeanyi",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "confirm_name": {
+            "text": "Wò ŋkɔe nye",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "confirm_name_question": {
+            "text": "Esia nyea? Gblɔ ɛ̃ alo ao.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "confirm_question": {
+            "text": "Esia nyea? Gblɔ ɛ̃ alo ao.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "greeting": {
+            "text": "Woezɔ,",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "main_menu": {
+            "text": "Nuka mate ŋu awɔ na wò? Àte ŋu abia wò ga ƒe agbɔsɔsɔ, abia fenyinyi, abia wò fenyinyi biabia ŋuti nya, alo abia ga si nàxe. Alo zi 1 na ga ƒe agbɔsɔsɔ, 2 na fenyinyi, 3 na biabia ŋuti nya, 4 na ga si nàxe, 8 be nàƒo nu kple ame, 0 be nàwu enu.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "no_application": {
+            "text": "Fenyinyi biabia aɖeke meli na wò o.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "no_repayment_due": {
+            "text": "Fe aɖeke meli si wòle be nàxe fifia o.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "not_understood": {
+            "text": "Taflatse, nyemese egɔme nyuie o.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "offer_registration": {
+            "text": "Woezɔ! Míekpɔ wò fon xexlẽdzesi le míaƒe agbalẽ me o. Èdi be míaŋlɔ wò ŋkɔ ɖi? Gblɔ ɛ̃ alo zi 1. Ne mèdi o la, gblɔ ao alo zi 2.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "registered": {
+            "text": "Akpe! Míeŋlɔ wò ŋkɔ ɖi.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "repayment_due_is": {
+            "text": "Ga si wòle be nàxe enye",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "repayment_due_on": {
+            "text": "eye ŋkeke si wòle be nàxe eye nye",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "speech_unavailable": {
+            "text": "Taflatse, nyemate ŋu ase wò gbe fifia o. Taflatse, zi xexlẽdzesiwo.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "status_approved": {
+            "text": "míeda asi ɖe edzi.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "status_closed": {
+            "text": "èxe fe la vɔ. Akpe!",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "status_disbursed": {
+            "text": "míena ga la wò xoxo.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "status_pending": {
+            "text": "ele lalam be míakpɔ edzi.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "status_rejected": {
+            "text": "taflatse, míete ŋu da asi ɖe edzi o.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "status_under_review": {
+            "text": "míele edzi kpɔm fifia.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "yes_no_hint": {
+            "text": "Taflatse, gblɔ ɛ̃ alo ao. Alo zi 1 na ɛ̃, 2 na ao.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "term_invalid": {
+            "text": "Ɣleti ƒe xexlẽme la mesɔ o. Ele be wòanye",
+            "audio": null,
+            "telephony_audio": null
+        }
+    },
+    "eng": {
+        "agent_unavailable": {
+            "text": "Sorry, our agents are not available yet. You will be able to speak to them soon.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "amount_not_understood": {
+            "text": "Sorry, I did not catch the amount.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "amount_out_of_range": {
+            "text": "You can borrow from",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "anything_else": {
+            "text": "Is there anything else I can help you with? Say yes or no.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "application_cancelled": {
+            "text": "Okay, the loan application has been cancelled.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "application_status_intro": {
+            "text": "Your latest loan application,",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "application_submitted": {
+            "text": "Your loan application has been received. Your reference is",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "ask_amount": {
+            "text": "How much would you like to borrow? Say the amount, or key it in and press hash.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "ask_name": {
+            "text": "Please say your full name.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "ask_term": {
+            "text": "Over how many months would you like to repay?",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "balance_is": {
+            "text": "Your account balance is",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "choose_language": {
+            "text": "For English, say yes or press 3.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "confirm_application": {
+            "text": "You would like to borrow",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "confirm_name": {
+            "text": "Your name is",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "confirm_name_question": {
+            "text": "Is that correct? Say yes or no.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "confirm_question": {
+            "text": "Is that correct? Say yes or no.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "goodbye": {
+            "text": "Thank you for calling. Goodbye.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "greeting": {
+            "text": "Welcome,",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "main_menu": {
+            "text": "How can I help you today? You can check your balance, apply for a loan, check your loan application status, or ask when your next repayment is due. Or press 1 for balance, 2 for a loan, 3 for application status, 4 for repayment, 8 to speak to an agent, or 0 to end the call.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "no_application": {
+            "text": "You do not have any loan applications.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "no_repayment_due": {
+            "text": "You have no repayment due right now.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "not_understood": {
+            "text": "Sorry, I did not understand that.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "offer_registration": {
+            "text": "Welcome! We could not find your phone number in our records. Would you like to sign up? Say yes or press 1. If not, say no or press 2.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "registered": {
+            "text": "Thank you! You are now signed up.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "repayment_due_is": {
+            "text": "Your next repayment is",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "repayment_due_on": {
+            "text": "due on",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "speech_unavailable": {
+            "text": "Sorry, I cannot hear your voice right now. Please use your keypad.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "status_approved": {
+            "text": "has been approved.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "status_closed": {
+            "text": "is fully repaid. Well done!",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "status_disbursed": {
+            "text": "has been paid out to you.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "status_pending": {
+            "text": "is waiting to be reviewed.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "status_rejected": {
+            "text": "was not approved, sorry.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "status_under_review": {
+            "text": "is being reviewed.",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "term_invalid": {
+            "text": "That number of months is not valid. It must be",
+            "audio": null,
+            "telephony_audio": null
+        },
+        "yes_no_hint": {
+            "text": "Please say yes or no, or press 1 for yes and 2 for no.",
+            "audio": null,
+            "telephony_audio": null
+        }
+    }
+}

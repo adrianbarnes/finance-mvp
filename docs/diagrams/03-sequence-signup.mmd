@@ -1,0 +1,18 @@
+sequenceDiagram
+    actor Caller
+    participant Phone as Browser Phone (POC)
+    participant Engine as ConversationEngine
+    participant ASR as Speech recognition
+    participant DB as Database
+    Note over Caller,DB: Language chosen, phone number not found
+    Engine-->>Phone: 1. Welcome. Do you want to be signed up? Say yes or press 1
+    Caller->>Phone: 2. yes (no or 2 - thank caller and end)
+    Phone->>Engine: 3. utterance or transcript
+    Engine->>ASR: 4. Khaya (Twi/Ewe) or browser (English)
+    Engine-->>Phone: 5. Please say your full name
+    Caller->>Phone: 6. says name
+    Phone->>Engine: 7. utterance or transcript
+    Engine-->>Phone: 8. You said NAME. Is that correct?
+    Caller->>Phone: 9. yes (no - ask for name again)
+    Engine->>DB: 10. create Customer (phone, name, language, balance 0, registered_via voice)
+    Engine-->>Phone: 11. You are registered - purpose of call (main menu)

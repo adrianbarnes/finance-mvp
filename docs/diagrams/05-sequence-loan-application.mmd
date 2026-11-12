@@ -1,0 +1,21 @@
+sequenceDiagram
+    actor Caller
+    participant Phone as Browser Phone (POC)
+    participant Engine as ConversationEngine
+    participant ASR as Speech recognition
+    participant DB as Database
+    Caller->>Phone: 1. Me pe bosea (I want a loan) or press 2
+    Phone->>Engine: 2. utterance
+    Engine->>ASR: 3. transcribe
+    Engine-->>Phone: 4. How much? Say it in English, or key digits then hash
+    Caller->>Phone: 5. One thousand five hundred cedis
+    Phone->>Engine: 6. utterance
+    Engine->>Engine: 7. parse 1500, check GHS 100 to 10,000
+    Engine-->>Phone: 8. For how many months?
+    Caller->>Phone: 9. Asram asia (six months)
+    Phone->>Engine: 10. utterance
+    Engine-->>Phone: 11. 1,500 cedis for 6 months - is that correct?
+    Caller->>Phone: 12. Aane or press 1
+    Phone->>Engine: 13. utterance
+    Engine->>DB: 14. insert LoanApplication (pending, reference LN4827)
+    Engine-->>Phone: 15. Application received, reference L N 4 8 2 7. Anything else?

@@ -1,0 +1,23 @@
+sequenceDiagram
+    actor Caller
+    participant Phone as Browser Phone (POC)
+    participant API as CallController
+    participant Engine as ConversationEngine
+    participant Khaya as Khaya ASR v3
+    participant DB as Database
+    Caller->>Phone: 1. Enter caller number, press Call (mic open, hands-free)
+    Phone->>API: 2. POST /calls (caller_number)
+    API->>Engine: 3. startCall(number, webrtc)
+    Engine->>DB: 4. find Customer by phone number
+    Engine-->>Phone: 5. known with saved language and remember-language on - greeting and purpose of call (skip to 14)
+    Engine-->>Phone: 6. otherwise - language offers back to back - Twi (aane/1), Ewe (ɛ̃/2), English (yes/3)
+    Phone-->>Caller: 7. play offers, keep listening
+    Caller->>Phone: 8. speaks or presses a key while offers play
+    Phone->>Phone: 9. stop prompt audio (barge-in)
+    Phone->>API: 10. POST utterance WAV or keypad digit
+    API->>Engine: 11. handleSpeech or handleInput
+    Engine->>Khaya: 12. transcribe once in default language (twi)
+    Engine->>Engine: 13. match yes-words and names of every enabled language
+    Engine-->>Phone: 14. reply in chosen language - sign-up offer (unknown) or purpose of call (known)
+    Phone->>API: 15. silence for 6 seconds - POST event no_input
+    Engine-->>Phone: 16. replay offers (max 2 more times), then thank caller and end

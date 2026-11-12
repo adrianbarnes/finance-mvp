@@ -1,0 +1,90 @@
+classDiagram
+    class BrowserPhone {
+        <<JavaScript POC>>
+        +call(callerNumber)
+        +pressKey(digit)
+        -voiceActivityDetection()
+        -browserSpeechRecognition() English
+        -encodeWav(samples) Blob
+        -playReply(segments)
+    }
+    class CallController {
+        +store(StartCallRequest)
+        +utterance(StoreCallUtteranceRequest, CallSession)
+        +input(StoreCallInputRequest, CallSession)
+        +destroy(CallSession)
+    }
+    class MnotifyWebhookController {
+        <<later phase>>
+    }
+    class ConversationEngine {
+        +startCall(callerNumber, channel, direction)
+        +handleSpeech(CallSession, audio, mimeType) AssistantReply
+        +handleInput(CallSession, CallInput) AssistantReply
+        +hangUp(CallSession)
+    }
+    class IntentResolver {
+        +resolve(transcript, Language, expectsConfirmation) Intent
+        +resolveKeypad(digits, expectsConfirmation) Intent
+        +chosenLanguage(transcript) Language
+        +chosenLanguageByKeypad(digits) Language
+    }
+    class NumberParser {
+        +parse(transcript, Language) float
+    }
+    class VoicePromptLibrary {
+        +segment(key, Language) array
+    }
+    class DynamicSpeech {
+        +segment(text) array
+    }
+    class AudioTranscoder {
+        <<ffmpeg>>
+        +prepareForRecognition(audio) PreparedAudio
+        +forBrowserPlayback(audio) string
+        +forTelephony(audio) string
+    }
+    class SpeechRecognizer {
+        <<interface>>
+        +transcribe(audio, mimeType, Language, CallSession) string
+    }
+    class KhayaSpeechRecognizer
+    class FakeSpeechRecognizer
+    class KhayaQuotaGuard {
+        +ensureAvailable()
+        +summary() array
+    }
+    class AbenaTextToSpeech {
+        +synthesize(text, voice) string
+    }
+    class VoicePromptAudioStore {
+        +store(VoicePrompt, sourceAudio)
+    }
+    class VoicePromptBundle {
+        +export(prompts) array
+        +import() array
+    }
+    class Language {
+        <<enumeration>>
+        Twi = twi
+        Ewe = ewe
+        English = eng (browser ASR)
+        Fante = fat (later)
+        Ga = gaa (later)
+    }
+    BrowserPhone ..> CallController : HTTPS JSON and WAV
+    CallController --> ConversationEngine
+    MnotifyWebhookController --> ConversationEngine
+    ConversationEngine --> SpeechRecognizer
+    ConversationEngine --> AudioTranscoder
+    ConversationEngine --> IntentResolver
+    ConversationEngine --> NumberParser
+    ConversationEngine --> VoicePromptLibrary
+    ConversationEngine --> DynamicSpeech
+    SpeechRecognizer <|.. KhayaSpeechRecognizer
+    SpeechRecognizer <|.. FakeSpeechRecognizer
+    KhayaSpeechRecognizer --> KhayaQuotaGuard
+    DynamicSpeech --> AbenaTextToSpeech
+    VoicePromptAudioStore --> AudioTranscoder
+    VoicePromptBundle ..> VoicePromptAudioStore
+    ConversationEngine ..> Language

@@ -1,0 +1,32 @@
+flowchart LR
+    subgraph Now - Proof of concept
+        B[Browser Phone - mic, VAD, barge-in, keypad, Chrome ASR for English]
+        T[Test Panel - customers, balances, loans, language reset, voice prompts]
+    end
+    subgraph Later - IVR
+        MN[mNotify - outbound launch and webhook]
+        FS[Own voice engine - FreeSWITCH to SIP provider]
+    end
+    subgraph Laravel
+        C[CallController]
+        W[mNotify Webhook Adapter]
+        G[ConversationEngine]
+        F[AudioTranscoder - ffmpeg]
+        Q[KhayaQuotaGuard]
+        P[Voice prompts - function/step/language bundle]
+    end
+    K[Khaya ASR v3 - Twi and Ewe]
+    AB[Abena AI TTS - prompt audio]
+    A[Staff agent phone - stage 2]
+    DB[(Database)]
+    B --> C --> G
+    T --> DB
+    T --> P
+    P --> AB
+    MN -.-> W -.-> G
+    FS -.-> G
+    G --> F
+    G --> Q --> K
+    G --> DB
+    G --> P
+    G -.-> A

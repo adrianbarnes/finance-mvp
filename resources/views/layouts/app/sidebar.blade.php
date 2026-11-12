@@ -16,6 +16,18 @@
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
+
+                <flux:sidebar.group :heading="__('Voice assistant')" class="grid">
+                    <flux:sidebar.item icon="phone" :href="route('call-console')" :current="request()->routeIs('call-console')" wire:navigate>
+                        {{ __('Call console') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="users" :href="route('customers.index')" :current="request()->routeIs('customers.*')" wire:navigate>
+                        {{ __('Customers') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="speaker-wave" :href="route('voice-prompts.index')" :current="request()->routeIs('voice-prompts.*')" wire:navigate>
+                        {{ __('Voice prompts') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
             </flux:sidebar.nav>
 
             <flux:spacer />

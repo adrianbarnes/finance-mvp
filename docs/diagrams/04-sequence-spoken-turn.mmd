@@ -1,0 +1,27 @@
+sequenceDiagram
+    actor Caller
+    participant Phone as Browser Phone (POC)
+    participant API as CallController
+    participant Engine as ConversationEngine
+    participant FF as AudioTranscoder (ffmpeg)
+    participant Guard as KhayaQuotaGuard
+    participant Khaya as Khaya ASR v3
+    participant NLU as IntentResolver
+    participant DB as Database
+    Note over Caller,Phone: Twi and Ewe - audio goes to Khaya. English (testing) - Chrome Web Speech API sends text, no Khaya.
+    Caller->>Phone: 1. Me pe se mehwe me sika dodoo (check my balance)
+    Phone->>Phone: 2. voice activity detection marks end of sentence
+    Phone->>API: 3. POST /calls/uuid/utterances (WAV) - English instead POST /inputs (transcript)
+    API->>Engine: 4. handleSpeech(call, audio)
+    Engine->>FF: 5. normalise to 16 kHz mono WAV and trim silence
+    FF-->>Engine: 6. clean WAV (no speech - treat as no input, Khaya not called)
+    Engine->>Guard: 7. ensureAvailable() - 10 per minute, 100 per month
+    Engine->>Khaya: 8. POST /transcribe?language=twi or ewe
+    Khaya-->>Engine: 9. transcript
+    Engine->>DB: 10. log KhayaApiCall
+    Engine->>NLU: 11. resolve(transcript, language) - keyword lexicon, no translation call
+    NLU-->>Engine: 12. CheckBalance
+    Engine->>DB: 13. read balance, save CallTurns and state
+    Engine-->>API: 14. reply segments - recorded prompt audio + amount in English
+    API-->>Phone: 15. JSON reply, call language, quota left
+    Phone-->>Caller: 16. play reply (quota used up - prompt asks for keypad instead)

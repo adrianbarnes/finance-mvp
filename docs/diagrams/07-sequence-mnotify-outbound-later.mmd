@@ -1,0 +1,20 @@
+sequenceDiagram
+    actor Tester
+    participant Panel as Test Panel
+    participant App as Laravel
+    participant MN as mNotify API
+    actor Customer
+    participant Hook as mNotify Webhook Adapter
+    participant Engine as ConversationEngine
+    Note over Tester,Engine: LATER PHASE - IVR via mNotify (outbound first, inbound on same webhook)
+    Tester->>Panel: 1. Launch outbound call for a customer
+    Panel->>App: 2. create CallSession (channel ivr, direction outbound)
+    App->>MN: 3. POST /initiate-ivr-call (fromNumber, toNumber, uuid, uniqueId)
+    MN->>Customer: 4. phone rings, customer answers
+    MN->>Hook: 5. GET callback (CallerId, SequenceID, IsStarting, context outbound)
+    Hook->>Engine: 6. startCall - same engine as browser
+    Hook-->>MN: 7. background action - 8 kHz prompt audio URL, keypad can interrupt
+    MN->>Hook: 8. GET callback (DTMF) or after record action (recordingUrl)
+    Hook->>Engine: 9. handleInput or handleSpeech (download, ffmpeg, Khaya)
+    Hook-->>MN: 10. background, get_digits, record, playback or hangup
+    Note over MN,Engine: STAGE 2 - speak to an agent returns dial action to a staff number

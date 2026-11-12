@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> Pending : submitted by voice or test panel
+    Pending --> UnderReview : set in test panel
+    UnderReview --> Approved
+    UnderReview --> Rejected
+    Approved --> Disbursed : next repayment amount and due date set
+    Disbursed --> Closed : fully repaid
+    Rejected --> [*]
+    Closed --> [*]

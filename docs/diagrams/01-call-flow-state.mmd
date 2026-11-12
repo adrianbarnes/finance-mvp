@@ -1,0 +1,24 @@
+stateDiagram-v2
+    [*] --> LookupCaller : call connected
+    LookupCaller --> MainMenu : known customer with saved language and remember-language on - greet by name, ask purpose of call
+    LookupCaller --> ChooseLanguage : unknown number, saved language reset, or remember-language off
+    ChooseLanguage --> ChooseLanguage : no input - replay the language offers (max 2 more times)
+    ChooseLanguage --> Ended : not affirmative, or still no input after 2 replays - thank caller
+    ChooseLanguage --> MainMenu : known customer - aane / 1 Twi, ɛ̃ / 2 Ewe, yes / 3 English - saved only if remember-language on
+    ChooseLanguage --> OfferRegistration : unknown number - language chosen
+    OfferRegistration --> AskName : yes or press 1
+    OfferRegistration --> Ended : no or press 2 - thank caller
+    AskName --> ConfirmName : name heard
+    ConfirmName --> MainMenu : yes - customer created, zero balance, language saved
+    ConfirmName --> AskName : no
+    MainMenu --> AnythingElse : balance, application status or repayment due - answer spoken
+    MainMenu --> ApplyAmount : apply for loan
+    MainMenu --> MainMenu : agent requested (key 8) - stage 2, now says coming soon
+    MainMenu --> Ended : goodbye or press 0
+    ApplyAmount --> ApplyTerm : valid amount - English words or digits then hash
+    ApplyTerm --> ApplyConfirm : valid months
+    ApplyConfirm --> AnythingElse : yes - application saved, reference read out
+    ApplyConfirm --> MainMenu : no - cancelled
+    AnythingElse --> MainMenu : yes
+    AnythingElse --> Ended : no - thank caller
+    Ended --> [*]
