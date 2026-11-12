@@ -39,6 +39,11 @@ class ConversationEngine
      */
     private array $segments = [];
 
+    /**
+     * Set when the current turn's input could not be understood.
+     */
+    private bool $misunderstood = false;
+
     public function __construct(
         private SpeechRecognizer $speechRecognizer,
         private AudioTranscoder $audioTranscoder,
@@ -128,6 +133,7 @@ class ConversationEngine
     public function handleInput(CallSession $call, CallInput $input): AssistantReply
     {
         $this->segments = [];
+        $this->misunderstood = false;
 
         if ($input->mode === InputMode::NoInput) {
             $this->recordCustomerTurn($call, $input, null);
@@ -152,7 +158,7 @@ class ConversationEngine
             CallState::Ended => CallState::Ended,
         };
 
-        return $this->finishTurn($call, $nextState, $input->value, $intent);
+        return $this->finishTurn($call, $this->applyMisunderstandingLimit($call, $nextState), $input->value, $intent);
     }
 
     public function hangUp(CallSession $call): void
@@ -193,9 +199,11 @@ class ConversationEngine
             : $this->intentResolver->chosenLanguage($input->value);
 
         if ($language === null) {
-            $this->prompt($call, 'goodbye');
+            $this->misunderstood = true;
+            $this->prompt($call, 'not_understood');
+            $this->offerLanguages();
 
-            return CallState::Ended;
+            return CallState::ChooseLanguage;
         }
 
         $call->language = $language;
@@ -221,7 +229,7 @@ class ConversationEngine
         return match ($intent) {
             Intent::Yes => $this->promptAndMoveTo($call, ['ask_name'], CallState::AskName),
             Intent::No, Intent::Goodbye => $this->promptAndMoveTo($call, ['goodbye'], CallState::Ended),
-            default => $this->promptAndMoveTo($call, ['yes_no_hint', 'offer_registration'], CallState::OfferRegistration),
+            default => $this->askAgain($call, ['yes_no_hint', 'offer_registration'], CallState::OfferRegistration),
         };
     }
 
@@ -230,10 +238,7 @@ class ConversationEngine
         $name = Str::limit(Str::title(trim(preg_replace('/[^\p{L}\s\'-]+/u', ' ', $input->value) ?? '')), 100, '');
 
         if ($input->mode === InputMode::Keypad || $name === '') {
-            $this->prompt($call, 'not_understood');
-            $this->prompt($call, 'ask_name');
-
-            return CallState::AskName;
+            return $this->askAgain($call, ['not_understood', 'ask_name'], CallState::AskName);
         }
 
         $this->rememberContext($call, 'pending_name', $name);
@@ -267,7 +272,7 @@ class ConversationEngine
             return $this->promptAndMoveTo($call, ['ask_name'], CallState::AskName);
         }
 
-        return $this->promptAndMoveTo($call, ['yes_no_hint', 'confirm_name_question'], CallState::ConfirmName);
+        return $this->askAgain($call, ['yes_no_hint', 'confirm_name_question'], CallState::ConfirmName);
     }
 
     private function handleMenuChoice(CallSession $call, Intent $intent): CallState
@@ -324,7 +329,7 @@ class ConversationEngine
                 return $this->promptAndMoveTo($call, ['main_menu'], CallState::MainMenu);
 
             default:
-                return $this->promptAndMoveTo($call, ['not_understood', 'main_menu'], CallState::MainMenu);
+                return $this->askAgain($call, ['not_understood', 'main_menu'], CallState::MainMenu);
         }
 
         $this->prompt($call, 'anything_else');
@@ -341,7 +346,7 @@ class ConversationEngine
         }
 
         if ($amount === null) {
-            return $this->promptAndMoveTo($call, ['amount_not_understood', 'ask_amount'], CallState::ApplyAmount);
+            return $this->askAgain($call, ['amount_not_understood', 'ask_amount'], CallState::ApplyAmount);
         }
 
         $minimum = (int) config('conversation.loan.min_amount_cedis');
@@ -372,6 +377,7 @@ class ConversationEngine
         $maximum = (int) config('conversation.loan.max_term_months');
 
         if ($months === null || $months < 1 || $months > $maximum || floor($months) !== $months) {
+            $this->misunderstood = $months === null;
             $this->prompt($call, 'term_invalid');
             $this->say("1 to {$maximum} months");
             $this->prompt($call, 'ask_term');
@@ -410,7 +416,7 @@ class ConversationEngine
             return $this->cancelApplication($call);
         }
 
-        return $this->promptAndMoveTo($call, ['yes_no_hint', 'confirm_question'], CallState::ApplyConfirm);
+        return $this->askAgain($call, ['yes_no_hint', 'confirm_question'], CallState::ApplyConfirm);
     }
 
     private function handleAnythingElse(CallSession $call, Intent $intent): CallState
@@ -423,7 +429,7 @@ class ConversationEngine
             Intent::Yes => $this->promptAndMoveTo($call, ['main_menu'], CallState::MainMenu),
             Intent::No, Intent::Goodbye => $this->promptAndMoveTo($call, ['goodbye'], CallState::Ended),
             Intent::Repeat => $this->promptAndMoveTo($call, ['anything_else'], CallState::AnythingElse),
-            default => $this->promptAndMoveTo($call, ['yes_no_hint', 'anything_else'], CallState::AnythingElse),
+            default => $this->askAgain($call, ['yes_no_hint', 'anything_else'], CallState::AnythingElse),
         };
     }
 
@@ -441,12 +447,13 @@ class ConversationEngine
     private function recognitionUnavailable(CallSession $call, string $audioPath, string $promptKey, bool $suggestKeypad): AssistantReply
     {
         $this->segments = [];
+        $this->misunderstood = $promptKey === 'not_understood';
         $this->recordCustomerTurn($call, CallInput::speech('', $audioPath), Intent::Unknown);
 
         $this->prompt($call, $promptKey);
         $this->askCurrentQuestion($call);
 
-        $reply = $this->finishTurn($call, $call->state, null, Intent::Unknown);
+        $reply = $this->finishTurn($call, $this->applyMisunderstandingLimit($call, $call->state), null, Intent::Unknown);
 
         return new AssistantReply($reply->segments, $reply->state, null, Intent::Unknown, $suggestKeypad);
     }
@@ -520,6 +527,44 @@ class ConversationEngine
     private function languageFor(CallSession $call): Language
     {
         return $call->language ?? Language::from(config('conversation.default_language'));
+    }
+
+    /**
+     * The caller's answer was not understood: ask the question again.
+     *
+     * @param  list<string>  $promptKeys
+     */
+    private function askAgain(CallSession $call, array $promptKeys, CallState $state): CallState
+    {
+        $this->misunderstood = true;
+
+        return $this->promptAndMoveTo($call, $promptKeys, $state);
+    }
+
+    /**
+     * Count consecutive misunderstood answers. On the last allowed attempt,
+     * explain that the call has to end instead of asking again.
+     */
+    private function applyMisunderstandingLimit(CallSession $call, CallState $nextState): CallState
+    {
+        if (! $this->misunderstood) {
+            $this->forgetContext($call, 'misunderstood_attempts');
+
+            return $nextState;
+        }
+
+        $attempts = (int) $call->contextValue('misunderstood_attempts', 0) + 1;
+
+        if ($attempts >= (int) config('conversation.max_misunderstood_attempts')) {
+            $this->segments = [];
+            $this->prompt($call, 'too_many_attempts');
+
+            return CallState::Ended;
+        }
+
+        $this->rememberContext($call, 'misunderstood_attempts', $attempts);
+
+        return $nextState;
     }
 
     /**

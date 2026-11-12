@@ -21,3 +21,4 @@ sequenceDiagram
     Engine-->>Phone: 14. reply in chosen language - sign-up offer (unknown) or purpose of call (known)
     Phone->>API: 15. silence for 6 seconds - POST event no_input
     Engine-->>Phone: 16. replay offers (max 2 more times), then thank caller and end
+    Engine-->>Phone: 17. answer not understood - say so and replay offers; 3rd in a row - explain and end call

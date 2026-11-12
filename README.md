@@ -14,7 +14,7 @@ This is a proof of concept, built to be plugged into an existing microfinance sy
 ## How a call works
 
 1. **Caller lookup.** The caller is identified by **phone number**; there are no PINs.
-2. **Language choice.** New numbers, and customers whose language was reset, hear one prompt offering each language in that language: *Twi: say "aane" or press 1 · Ewe: say "ɛ̃" or press 2 · English: say "yes" or press 3*. Speaking or pressing a key interrupts the prompt (barge-in). If the caller gives no input, the prompt replays twice, then the call ends politely. Returning customers skip this and are greeted in their saved language, unless **Remember caller languages** is switched off on the call console.
+2. **Language choice.** New numbers, and customers whose language was reset, hear one prompt offering each language in that language: *Twi: say "aane" or press 1 · Ewe: say "ɛ̃" or press 2 · English: say "yes" or press 3*. Speaking or pressing a key interrupts the prompt (barge-in). If the caller gives no input, the prompt replays twice, then the call ends politely. If an answer isn't understood, the assistant says so and asks again. After **3 misunderstood answers in a row** at any step, it explains that it can't understand the caller and ends the call. Returning customers skip this and are greeted in their saved language, unless **Remember caller languages** is switched off on the call console.
 3. **Sign-up.** Unknown numbers are offered sign-up: the caller says their name, confirms it, and a customer is created with a zero balance.
 4. **Main menu.** The caller can speak naturally or use the keypad:
 

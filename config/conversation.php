@@ -50,7 +50,7 @@ return [
     | lists prompts in these groups. Keys not listed fall under "other".
     */
     'prompt_groups' => [
-        'call' => ['greeting', 'main_menu', 'anything_else', 'yes_no_hint', 'not_understood', 'speech_unavailable', 'goodbye'],
+        'call' => ['greeting', 'main_menu', 'anything_else', 'yes_no_hint', 'not_understood', 'speech_unavailable', 'too_many_attempts', 'goodbye'],
         'language' => ['choose_language'],
         'registration' => ['offer_registration', 'ask_name', 'confirm_name', 'confirm_name_question', 'registered'],
         'balance' => ['balance_is'],
@@ -84,6 +84,13 @@ return [
     | input, before the assistant thanks them and ends the call.
     */
     'max_no_input_replays' => 2,
+
+    /*
+    | How many answers in a row may be misunderstood. Each one is followed by
+    | the question again; on the last, the assistant explains that it cannot
+    | understand the caller and ends the call.
+    */
+    'max_misunderstood_attempts' => 3,
 
     /*
     | Seconds of silence after a prompt finishes before the client reports

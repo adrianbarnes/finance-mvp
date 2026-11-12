@@ -3,7 +3,8 @@ stateDiagram-v2
     LookupCaller --> MainMenu : known customer with saved language and remember-language on - greet by name, ask purpose of call
     LookupCaller --> ChooseLanguage : unknown number, saved language reset, or remember-language off
     ChooseLanguage --> ChooseLanguage : no input - replay the language offers (max 2 more times)
-    ChooseLanguage --> Ended : not affirmative, or still no input after 2 replays - thank caller
+    ChooseLanguage --> ChooseLanguage : not understood - say so and replay the offers
+    ChooseLanguage --> Ended : still no input after 2 replays - thank caller
     ChooseLanguage --> MainMenu : known customer - aane / 1 Twi, ɛ̃ / 2 Ewe, yes / 3 English - saved only if remember-language on
     ChooseLanguage --> OfferRegistration : unknown number - language chosen
     OfferRegistration --> AskName : yes or press 1
@@ -21,4 +22,5 @@ stateDiagram-v2
     ApplyConfirm --> MainMenu : no - cancelled
     AnythingElse --> MainMenu : yes
     AnythingElse --> Ended : no - thank caller
+    MainMenu --> Ended : any step - 3 misunderstood answers in a row - explain and end call
     Ended --> [*]

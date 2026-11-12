@@ -117,18 +117,29 @@ describe('choosing a language', function () {
         expect($customer->fresh()->preferred_language)->toBe(Language::Twi);
     });
 
-    test('thanking the caller and ending the call when the answer is not affirmative', function (array $input) {
+    test('asking again when the answer is not understood', function (array $input) {
         $uuid = placeCall('0209999999')->json('call.uuid');
 
         $response = sendCallInput($uuid, $input);
 
-        $response->assertJsonPath('reply.state', 'ended')->assertJsonPath('reply.ended', true);
-        expect(promptKeys($response))->toBe(['goodbye']);
-        expect(CallSession::query()->where('uuid', $uuid)->first()->ended_at)->not->toBeNull();
+        $response->assertJsonPath('reply.state', 'choose_language')->assertJsonPath('reply.ended', false);
+        expect(promptKeys($response))->toBe(['not_understood', 'choose_language', 'choose_language', 'choose_language']);
     })->with([
+        'misheard sentence' => [['text' => "I'm fine"]],
         'spoken no' => [['text' => 'daabi']],
         'key that is not a language' => [['digits' => '9']],
     ]);
+
+    test('ending the call after three answers in a row are not understood', function () {
+        $uuid = placeCall('0209999999')->json('call.uuid');
+        sendCallInput($uuid, ['text' => "I'm"]);
+        sendCallInput($uuid, ['text' => "I'm fine"]);
+
+        $response = sendCallInput($uuid, ['text' => 'hmm']);
+
+        $response->assertJsonPath('reply.ended', true);
+        expect(promptKeys($response))->toBe(['too_many_attempts']);
+    });
 
     test('replaying the prompt twice when there is no input, then ending the call', function () {
         $uuid = placeCall('0209999999')->json('call.uuid');
@@ -216,6 +227,47 @@ describe('browser-recognised speech', function () {
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         sendCallInput($uuid, ['transcript' => 'yes', 'digits' => '1'])->assertUnprocessable()->assertJsonValidationErrors('transcript');
+    });
+});
+
+describe('misunderstood answers', function () {
+    test('starting the count again after an answer is understood', function () {
+        Customer::factory()->create(['phone_number' => '233244000001']);
+        $uuid = placeCall('0244000001')->json('call.uuid');
+        sendCallInput($uuid, ['text' => 'hmm']);
+        sendCallInput($uuid, ['text' => 'hmm']);
+        sendCallInput($uuid, ['digits' => '1']);
+        sendCallInput($uuid, ['text' => 'aane']);
+        sendCallInput($uuid, ['text' => 'hmm']);
+
+        $response = sendCallInput($uuid, ['text' => 'hmm']);
+
+        $response->assertJsonPath('reply.state', 'main_menu');
+        expect(promptKeys($response))->toBe(['not_understood', 'main_menu']);
+    });
+
+    test('ending the call when the main menu request is not understood three times', function () {
+        Customer::factory()->create(['phone_number' => '233244000001']);
+        $uuid = placeCall('0244000001')->json('call.uuid');
+        sendCallInput($uuid, ['text' => 'hmm']);
+        sendCallInput($uuid, ['text' => 'hmm']);
+
+        $response = sendCallInput($uuid, ['text' => 'hmm']);
+
+        $response->assertJsonPath('reply.ended', true);
+        expect(promptKeys($response))->toBe(['too_many_attempts']);
+    });
+
+    test('not counting an amount that was understood but is out of range', function () {
+        Customer::factory()->create(['phone_number' => '233244000001']);
+        $uuid = placeCall('0244000001')->json('call.uuid');
+        sendCallInput($uuid, ['digits' => '2']);
+        sendCallInput($uuid, ['text' => 'fifty']);
+        sendCallInput($uuid, ['text' => 'fifty']);
+
+        $response = sendCallInput($uuid, ['text' => 'fifty']);
+
+        $response->assertJsonPath('reply.state', 'apply_amount');
     });
 });
 
