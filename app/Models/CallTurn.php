@@ -2,9 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\CallState;
 use App\Enums\InputMode;
-use App\Enums\Intent;
 use App\Enums\Speaker;
 use Carbon\CarbonImmutable;
 use Database\Factories\CallTurnFactory;
@@ -19,8 +17,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property Speaker $speaker
  * @property InputMode|null $input_mode
  * @property string|null $text
- * @property Intent|null $intent
- * @property CallState|null $state_after
+ * @property string|null $intent What the caller's answer was taken to mean, e.g. the menu option picked
+ * @property string|null $state_after The step the call waited on afterwards, or "ended"
  * @property string|null $audio_path
  * @property int|null $recognition_ms
  * @property CarbonImmutable|null $created_at
@@ -40,8 +38,6 @@ class CallTurn extends Model
         return [
             'speaker' => Speaker::class,
             'input_mode' => InputMode::class,
-            'intent' => Intent::class,
-            'state_after' => CallState::class,
         ];
     }
 

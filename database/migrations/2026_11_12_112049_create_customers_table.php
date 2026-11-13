@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('full_name')->nullable();
             $table->string('phone_number')->unique();
-            $table->string('preferred_language')->nullable();
+            $table->foreignId('preferred_language_id')->nullable()->constrained('languages')->nullOnDelete();
             $table->bigInteger('balance_pesewas')->default(0);
             $table->string('registered_via')->default('panel');
             $table->timestamps();

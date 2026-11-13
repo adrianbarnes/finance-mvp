@@ -2,8 +2,8 @@
 
 namespace App\Services\Speech;
 
-use App\Enums\Language;
 use App\Models\CallSession;
+use App\Models\Language;
 
 interface SpeechRecognizer
 {

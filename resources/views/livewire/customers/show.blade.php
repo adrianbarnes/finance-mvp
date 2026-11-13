@@ -26,8 +26,10 @@
             @endunless
 
             <flux:text>
-                @if ($customer->preferred_language)
-                    {{ __('Calls start in :language without asking.', ['language' => $customer->preferred_language->label()]) }}
+                @if ($customer->usableLanguage())
+                    {{ __('Calls start in :language without asking.', ['language' => $customer->usableLanguage()->name]) }}
+                @elseif ($customer->preferredLanguage)
+                    {{ __(':language is saved but switched off on the Languages page, so the next call asks for a language.', ['language' => $customer->preferredLanguage->name]) }}
                 @else
                     {{ __('No language saved. The next call starts with the language-choice prompt.') }}
                 @endif
@@ -35,12 +37,12 @@
 
             <div class="flex flex-wrap gap-2">
                 @foreach ($languages as $language)
-                    <flux:button size="sm" wire:click="setLanguage('{{ $language->value }}')" :variant="$customer->preferred_language === $language ? 'primary' : 'filled'">
-                        {{ $language->label() }}
+                    <flux:button size="sm" wire:click="setLanguage('{{ $language->code }}')" :variant="$customer->preferred_language_id === $language->id ? 'primary' : 'filled'">
+                        {{ $language->name }}
                     </flux:button>
                 @endforeach
 
-                <flux:button size="sm" variant="danger" icon="arrow-path" wire:click="resetLanguage" :disabled="$customer->preferred_language === null">
+                <flux:button size="sm" variant="danger" icon="arrow-path" wire:click="resetLanguage" :disabled="$customer->preferred_language_id === null">
                     {{ __('Reset (ask on next call)') }}
                 </flux:button>
             </div>
@@ -104,7 +106,7 @@
             <flux:card wire:key="call-{{ $call->id }}" class="space-y-3">
                 <div class="flex flex-wrap items-center gap-2 text-sm">
                     <flux:badge size="sm">{{ $call->started_at->format('j M Y H:i') }}</flux:badge>
-                    <flux:badge size="sm">{{ $call->language?->label() ?? __('No language') }}</flux:badge>
+                    <flux:badge size="sm">{{ $call->language?->name ?? __('No language') }}</flux:badge>
                     <flux:badge size="sm" :color="$call->hasEnded() ? 'zinc' : 'green'">{{ $call->hasEnded() ? __('Ended') : __('Active') }}</flux:badge>
                 </div>
 
@@ -114,7 +116,7 @@
                             <span class="w-20 shrink-0 font-medium">{{ $turn->speaker === \App\Enums\Speaker::Customer ? __('Caller') : __('Assistant') }}</span>
                             <span class="flex-1">
                                 @if ($turn->speaker === \App\Enums\Speaker::Customer)
-                                    <span class="text-zinc-500">[{{ $turn->input_mode?->value }}{{ $turn->intent ? ' → '.$turn->intent->value : '' }}]</span>
+                                    <span class="text-zinc-500">[{{ $turn->input_mode?->value }}{{ $turn->intent ? ' → '.$turn->intent : '' }}]</span>
                                 @endif
                                 {{ $turn->text }}
                             </span>

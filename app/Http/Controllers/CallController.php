@@ -30,12 +30,17 @@ class CallController extends Controller
 
     public function store(StartCallRequest $request): JsonResponse
     {
-        [$call, $reply] = $this->engine->startCall($request->validated('caller_number'), CallChannel::WebRtc);
+        [$call, $reply] = $this->engine->startCall(
+            $request->validated('caller_number'),
+            CallChannel::WebRtc,
+            useDraft: $request->boolean('use_draft'),
+        );
 
         return response()->json([
             'call' => [
                 'uuid' => $call->uuid,
                 'customer' => $call->customer?->full_name,
+                'flow_version' => $call->callFlow?->version,
             ],
             ...$this->payload($reply, $call),
         ], 201);
@@ -97,7 +102,7 @@ class CallController extends Controller
         return [
             'reply' => $reply->toArray(),
             'language' => $call->language === null ? null : [
-                'code' => $call->language->value,
+                'code' => $call->language->code,
                 'recognized_by_client' => $call->language->isRecognizedByClient(),
             ],
             'quota' => $this->quotaGuard->summary(),

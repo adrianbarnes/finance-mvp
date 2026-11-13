@@ -23,7 +23,8 @@ const BARGE_IN_THRESHOLD_FACTOR = 2.5;
 const BARGE_IN_ECHO_FACTOR = 2.5; // caller must be this much louder than the assistant's own voice in the mic
 const BARGE_IN_GRACE_MS = 500; // at the start of each prompt segment, only learn the echo level
 const BARGE_IN_CONFIRM_MS = 450; // speech needed before a playing prompt is stopped
-const MULTI_DIGIT_STATES = ['apply_amount', 'apply_term'];
+// Steps that take several digits ended with # (or a pause), e.g. an amount.
+const MULTI_DIGIT_STEP_TYPES = ['ask_number'];
 const MULTI_DIGIT_IDLE_MS = 3000;
 
 const CAPTURE_WORKLET = `
@@ -189,6 +190,7 @@ window.callConsole = (config) => {
         language: null,
         clientRecognition: false,
         callState: null,
+        stepType: null,
         busy: false,
         speaking: false,
         bargeIn: true,
@@ -216,7 +218,7 @@ window.callConsole = (config) => {
             }
 
             this.status = 'connecting';
-            const response = await this.request('POST', config.routes.start, { caller_number: this.callerNumber });
+            const response = await this.request('POST', config.routes.start, { caller_number: this.callerNumber, use_draft: Boolean(this.$wire?.useDraft) });
 
             if (!response) {
                 this.closeMicrophone();
@@ -228,7 +230,7 @@ window.callConsole = (config) => {
             this.callUuid = response.call.uuid;
             this.customerName = response.call.customer;
             this.status = 'in-call';
-            this.addLog('system', `Call connected${this.customerName ? ` (${this.customerName})` : ' (unknown number)'}`);
+            this.addLog('system', `Call connected${this.customerName ? ` (${this.customerName})` : ' (unknown number)'} · IVR flow v${response.call.flow_version}${this.$wire?.useDraft ? ' (draft)' : ''}`);
             await this.handleReply(response);
         },
 
@@ -258,7 +260,7 @@ window.callConsole = (config) => {
             this.keypadBuffer += key;
             clearTimeout(runtime.keypadTimer);
 
-            const multiDigit = MULTI_DIGIT_STATES.includes(this.callState);
+            const multiDigit = MULTI_DIGIT_STEP_TYPES.includes(this.stepType);
 
             if (!multiDigit || key === '#') {
                 this.sendDigits();
@@ -321,6 +323,7 @@ window.callConsole = (config) => {
             const reply = response.reply;
             this.quota = response.quota ?? this.quota;
             this.callState = reply.state;
+            this.stepType = reply.step_type;
             this.setLanguage(response.language);
 
             if (reply.heard) {

@@ -24,7 +24,7 @@ enum LoanApplicationStatus: string
     }
 
     /**
-     * Voice prompt key the assistant plays to describe this status.
+     * Key of the clip the assistant plays to describe this status.
      */
     public function promptKey(): string
     {

@@ -2,70 +2,67 @@
 
 namespace App\Services\Conversation;
 
-use App\Enums\Intent;
-use App\Enums\Language;
+use App\Enums\BranchMatch;
+use App\Models\FlowStep;
+use App\Models\Language;
+use Illuminate\Support\Collection;
 
 /**
- * Keyword-based intent matching on the transcript in the caller's own
- * language, so no translation call is spent per turn.
+ * Keyword matching on the transcript in the caller's own language, so no
+ * translation call is spent per turn: which branch of a choice the caller
+ * picked, and which language they accepted on the language choice.
+ *
+ * Words are matched against a normalised transcript (see
+ * TranscriptNormalizer). A word starting with "=" only matches when it is
+ * the whole answer, e.g. English "no", which is also the Twi "the".
  */
 class IntentResolver
 {
     /**
-     * Tie-break order when an utterance matches several intents. Status and
-     * repayment questions usually also mention "loan", so they come first.
+     * The branch picked by speech. The branch whose matching words are the
+     * most specific (longest in total) wins; a tie goes to the earlier one.
      *
-     * @var list<Intent>
+     * @param  Collection<int, FlowStep>  $branches  In order, keywords loaded
      */
-    private const array MenuPriority = [
-        Intent::SpeakToAgent,
-        Intent::ApplicationStatus,
-        Intent::RepaymentDue,
-        Intent::ApplyLoan,
-        Intent::CheckBalance,
-        Intent::Goodbye,
-        Intent::Repeat,
-        Intent::Yes,
-        Intent::No,
-    ];
-
-    /**
-     * @var list<Intent>
-     */
-    private const array ConfirmationPriority = [
-        Intent::Yes,
-        Intent::No,
-        Intent::Goodbye,
-        Intent::Repeat,
-        Intent::SpeakToAgent,
-        Intent::ApplicationStatus,
-        Intent::RepaymentDue,
-        Intent::ApplyLoan,
-        Intent::CheckBalance,
-    ];
-
-    public function resolve(string $transcript, Language $language, bool $expectsConfirmation = false): Intent
+    public function matchBranch(Collection $branches, string $transcript, Language $language): ?FlowStep
     {
         $normalized = TranscriptNormalizer::normalize($transcript);
 
         if ($normalized === '') {
-            return Intent::Unknown;
+            return null;
         }
 
-        $lexicon = config("conversation.lexicon.{$language->value}", []);
-        $bestIntent = Intent::Unknown;
+        $best = null;
         $bestScore = 0;
 
-        foreach ($expectsConfirmation ? self::ConfirmationPriority : self::MenuPriority as $intent) {
-            $score = $this->score($normalized, $lexicon[$intent->value] ?? []);
+        foreach ($branches->where('is_otherwise', false) as $branch) {
+            $words = match (BranchMatch::tryFrom((string) $branch->configValue('match'))) {
+                BranchMatch::Yes => $language->yes_words,
+                BranchMatch::No => $language->no_words,
+                default => $branch->keywordsFor($language),
+            };
+
+            $score = $this->score($normalized, $words);
 
             if ($score > $bestScore) {
-                $bestIntent = $intent;
+                $best = $branch;
                 $bestScore = $score;
             }
         }
 
-        return $bestIntent;
+        return $best;
+    }
+
+    /**
+     * The branch whose key was pressed.
+     *
+     * @param  Collection<int, FlowStep>  $branches
+     */
+    public function branchByKeypad(Collection $branches, string $digits): ?FlowStep
+    {
+        $key = rtrim($digits, '#');
+
+        return $key === '' ? null : $branches->where('is_otherwise', false)->firstWhere('keypad_digit', $key);
     }
 
     /**
@@ -80,8 +77,8 @@ class IntentResolver
             return null;
         }
 
-        foreach (Language::enabled() as $language) {
-            if ($this->score($normalized, config("conversation.language_affirmatives.{$language->value}", [])) > 0) {
+        foreach (Language::enabledInOrder() as $language) {
+            if ($this->score($normalized, $language->selection_words) > 0) {
                 return $language;
             }
         }
@@ -95,26 +92,18 @@ class IntentResolver
      */
     public function chosenLanguageByKeypad(string $digits): ?Language
     {
-        foreach (Language::enabled() as $language) {
-            if ($language->keypadNumber() === $digits) {
-                return $language;
-            }
+        $digits = rtrim($digits, '#');
+
+        if (! ctype_digit($digits) || (int) $digits < 1) {
+            return null;
         }
 
-        return null;
+        return Language::enabledInOrder()->get((int) $digits - 1);
     }
 
     /**
-     * Resolve a keypad press using the DTMF map for the current prompt.
-     */
-    public function resolveKeypad(string $digits, bool $expectsConfirmation = false): Intent
-    {
-        $map = config($expectsConfirmation ? 'conversation.keypad.confirmation' : 'conversation.keypad.main_menu');
-
-        return Intent::tryFrom($map[$digits] ?? '') ?? Intent::Unknown;
-    }
-
-    /**
+     * Total length of the words found in the transcript.
+     *
      * @param  list<string>  $phrases
      */
     private function score(string $normalized, array $phrases): int
@@ -123,13 +112,17 @@ class IntentResolver
 
         foreach ($phrases as $phrase) {
             if (str_starts_with($phrase, '=')) {
-                $score += $normalized === TranscriptNormalizer::normalize(substr($phrase, 1)) ? 1 : 0;
+                $whole = TranscriptNormalizer::normalize(substr($phrase, 1));
+                $score += $normalized === $whole ? mb_strlen($whole) : 0;
 
                 continue;
             }
 
-            $pattern = '/(?:^|\s)'.preg_quote(TranscriptNormalizer::normalize($phrase), '/').'(?:$|\s)/u';
-            $score += preg_match($pattern, $normalized);
+            $word = TranscriptNormalizer::normalize($phrase);
+
+            if ($word !== '' && preg_match('/(?:^|\s)'.preg_quote($word, '/').'(?:$|\s)/u', $normalized) === 1) {
+                $score += mb_strlen($word);
+            }
         }
 
         return $score;

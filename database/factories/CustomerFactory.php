@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Enums\Language;
 use App\Enums\RegisteredVia;
 use App\Models\Customer;
+use App\Models\Language;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,10 +22,18 @@ class CustomerFactory extends Factory
         return [
             'full_name' => fake()->name(),
             'phone_number' => '23324'.fake()->unique()->numerify('#######'),
-            'preferred_language' => Language::Twi,
+            'preferred_language_id' => fn (): ?int => Language::findByCode('twi')?->id,
             'balance_pesewas' => fake()->numberBetween(0, 500_000),
             'registered_via' => RegisteredVia::Panel,
         ];
+    }
+
+    /**
+     * A customer whose saved language has this code, e.g. "ewe".
+     */
+    public function speaking(string $code): static
+    {
+        return $this->state(fn (array $attributes): array => ['preferred_language_id' => Language::findByCode($code)?->id]);
     }
 
     /**
@@ -33,6 +41,6 @@ class CustomerFactory extends Factory
      */
     public function withoutLanguage(): static
     {
-        return $this->state(fn (array $attributes): array => ['preferred_language' => null]);
+        return $this->state(fn (array $attributes): array => ['preferred_language_id' => null]);
     }
 }

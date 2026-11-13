@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Language;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /*
@@ -16,6 +18,7 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(fn () => Storage::fake('public'))
     ->in('Feature');
 
 /*
@@ -44,7 +47,10 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * A language seeded by the migrations, e.g. language('twi').
+ */
+function language(string $code): Language
 {
-    // ..
+    return Language::query()->where('code', $code)->firstOrFail();
 }

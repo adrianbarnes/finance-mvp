@@ -2,9 +2,10 @@
 
 namespace App\Services\Khaya;
 
-use App\Enums\Language;
+use App\Enums\SpeechRecognition;
 use App\Models\CallSession;
 use App\Models\KhayaApiCall;
+use App\Models\Language;
 use App\Services\Speech\SpeechRecognitionFailed;
 use App\Services\Speech\SpeechRecognizer;
 use Illuminate\Http\Client\ConnectionException;
@@ -39,8 +40,8 @@ class KhayaSpeechRecognizer implements SpeechRecognizer
 
     public function transcribe(string $audio, string $mimeType, Language $language, ?CallSession $callSession = null): string
     {
-        if ($language->isRecognizedByClient()) {
-            throw new SpeechRecognitionFailed('UNSUPPORTED_LANGUAGE', "{$language->label()} is recognised in the browser, not by Khaya.");
+        if ($language->speech_recognition !== SpeechRecognition::Khaya || blank($language->khaya_code)) {
+            throw new SpeechRecognitionFailed('UNSUPPORTED_LANGUAGE', "{$language->name} speech is not recognised by Khaya.");
         }
 
         $apiKey = config('services.khaya.key');
@@ -60,7 +61,7 @@ class KhayaSpeechRecognizer implements SpeechRecognizer
             $response = Http::withHeaders(['Ocp-Apim-Subscription-Key' => $apiKey])
                 ->acceptJson()
                 ->timeout((int) config('services.khaya.timeout'))
-                ->withQueryParameters(['language' => $language->value])
+                ->withQueryParameters(['language' => $language->khaya_code])
                 ->withBody($audio, $contentType)
                 ->post(rtrim((string) config('services.khaya.asr_url'), '/').'/transcribe');
         } catch (ConnectionException $exception) {
@@ -93,7 +94,7 @@ class KhayaSpeechRecognizer implements SpeechRecognizer
         KhayaApiCall::query()->create([
             'call_session_id' => $callSession?->id,
             'endpoint' => self::Endpoint,
-            'language' => $language->value,
+            'language' => $language->code,
             'http_status' => $httpStatus,
             'error_code' => $errorCode,
             'latency_ms' => (int) ((hrtime(true) - $startedAt) / 1_000_000),

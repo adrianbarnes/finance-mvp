@@ -2,9 +2,9 @@
 
 namespace App\Livewire\Customers;
 
-use App\Enums\Language;
 use App\Enums\RegisteredVia;
 use App\Models\Customer;
+use App\Models\Language;
 use App\Support\Cedis;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
@@ -37,6 +37,7 @@ class Index extends Component
     public function customers(): Collection
     {
         return Customer::query()
+            ->with('preferredLanguage')
             ->withCount('loanApplications')
             ->when($this->search !== '', fn ($query) => $query->where(fn ($query) => $query
                 ->where('full_name', 'like', "%{$this->search}%")
@@ -53,7 +54,7 @@ class Index extends Component
         $validated = $this->validate([
             'fullName' => ['nullable', 'string', 'max:100'],
             'phoneNumber' => ['required', 'regex:/^233\d{9}$/', Rule::unique('customers', 'phone_number')],
-            'preferredLanguage' => ['nullable', Rule::enum(Language::class)],
+            'preferredLanguage' => ['nullable', Rule::exists('languages', 'code')->where('enabled', true)->whereNull('deleted_at')],
             'openingBalance' => ['required', 'numeric', 'min:0', 'max:10000000'],
         ], [
             'phoneNumber.regex' => 'Enter a Ghana number, e.g. 0244123456.',
@@ -62,7 +63,7 @@ class Index extends Component
         $customer = Customer::query()->create([
             'full_name' => $validated['fullName'] ?: null,
             'phone_number' => $validated['phoneNumber'],
-            'preferred_language' => $validated['preferredLanguage'] ?: null,
+            'preferred_language_id' => $validated['preferredLanguage'] ? Language::findByCode($validated['preferredLanguage'])?->id : null,
             'balance_pesewas' => Cedis::toPesewas($validated['openingBalance']),
             'registered_via' => RegisteredVia::Panel,
         ]);
@@ -75,7 +76,7 @@ class Index extends Component
     public function render(): View
     {
         return view('livewire.customers.index', [
-            'languages' => Language::enabled(),
+            'languages' => Language::enabledInOrder(),
         ]);
     }
 }

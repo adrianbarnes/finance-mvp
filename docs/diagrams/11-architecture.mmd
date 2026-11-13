@@ -1,32 +1,35 @@
 flowchart LR
     subgraph Now - Proof of concept
-        B[Browser Phone - mic, VAD, barge-in, keypad, Chrome ASR for English]
-        T[Test Panel - customers, balances, loans, language reset, voice prompts]
+        B[Browser Phone - mic, VAD, barge-in, keypad, Chrome ASR for English, Test draft]
+        T[Test Panel - customers, balances, loans, language reset]
+        V[IVR flow builder - steps, branches, recordings per language, publish]
+        L[Languages page]
     end
     subgraph Later - IVR
-        MN[mNotify - outbound launch and webhook]
         FS[Own voice engine - FreeSWITCH to SIP provider]
     end
     subgraph Laravel
         C[CallController]
-        W[mNotify Webhook Adapter]
-        G[ConversationEngine]
+        G[ConversationEngine - runs the published flow]
+        P[FlowPublisher - draft, publish, archive]
         F[AudioTranscoder - ffmpeg]
         Q[KhayaQuotaGuard]
-        P[Voice prompts - function/step/language bundle]
+        S[(flow-audio storage)]
     end
     K[Khaya ASR v3 - Twi and Ewe]
-    AB[Abena AI TTS - prompt audio]
     A[Staff agent phone - stage 2]
     DB[(Database)]
+    BU[Committed bundle - version 1 wording and audio]
     B --> C --> G
+    G --> P
+    V --> P
+    V --> F --> S
+    L --> DB
     T --> DB
-    T --> P
-    P --> AB
-    MN -.-> W -.-> G
+    BU --> P
     FS -.-> G
     G --> F
     G --> Q --> K
     G --> DB
-    G --> P
+    G --> S
     G -.-> A

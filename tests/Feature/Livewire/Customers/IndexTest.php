@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\Language;
 use App\Enums\RegisteredVia;
 use App\Livewire\Customers\Index;
 use App\Models\Customer;
@@ -25,7 +24,7 @@ test('adds a customer with a normalised phone number and opening balance', funct
     $this->assertDatabaseHas('customers', [
         'full_name' => 'Abena Boateng',
         'phone_number' => '233244556677',
-        'preferred_language' => Language::Twi->value,
+        'preferred_language_id' => language('twi')->id,
         'balance_pesewas' => 15_025,
         'registered_via' => RegisteredVia::Panel->value,
     ]);

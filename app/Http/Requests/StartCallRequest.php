@@ -19,6 +19,7 @@ class StartCallRequest extends FormRequest
     {
         return [
             'caller_number' => ['required', 'string', 'regex:/^\+?[\d\s-]{9,16}$/'],
+            'use_draft' => ['sometimes', 'boolean'],
         ];
     }
 

@@ -1,15 +1,17 @@
 <?php
 
-use App\Enums\CallState;
-use App\Enums\Language;
 use App\Enums\LoanApplicationStatus;
 use App\Enums\RegisteredVia;
+use App\Enums\StepType;
 use App\Models\CallSession;
 use App\Models\Customer;
+use App\Models\Language;
 use App\Models\LoanApplication;
 use App\Models\User;
 use App\Services\Audio\AudioTranscoder;
 use App\Services\Audio\PreparedAudio;
+use App\Services\Flows\FlowEditor;
+use App\Services\Flows\FlowPublisher;
 use App\Services\Speech\FakeSpeechRecognizer;
 use App\Services\Speech\SpeechQuotaExceeded;
 use App\Services\Speech\SpeechRecognizer;
@@ -24,6 +26,14 @@ use Illuminate\Testing\TestResponse;
 function placeCall(string $callerNumber): TestResponse
 {
     return test()->actingAs(User::factory()->create())->postJson(route('calls.store'), ['caller_number' => $callerNumber]);
+}
+
+/**
+ * Place a call that runs the draft flow, as when "Test draft" is on.
+ */
+function placeDraftCall(string $callerNumber): TestResponse
+{
+    return test()->actingAs(User::factory()->create())->postJson(route('calls.store'), ['caller_number' => $callerNumber, 'use_draft' => true]);
 }
 
 /**
@@ -68,7 +78,7 @@ describe('starting a call', function () {
 
         $response = placeCall('024 400 0001');
 
-        $response->assertCreated()->assertJsonPath('reply.state', 'main_menu')->assertJsonPath('call.customer', 'Ama Mensah');
+        $response->assertCreated()->assertJsonPath('reply.state', 'Main menu')->assertJsonPath('call.customer', 'Ama Mensah');
         expect(promptKeys($response))->toBe(['greeting', 'main_menu'])
             ->and(spokenTexts($response))->toBe(['Ama Mensah']);
     });
@@ -78,7 +88,7 @@ describe('starting a call', function () {
 
         $response = placeCall('0244000001');
 
-        $response->assertCreated()->assertJsonPath('reply.state', 'choose_language')->assertJsonPath('language', null);
+        $response->assertCreated()->assertJsonPath('reply.state', 'Choose language')->assertJsonPath('language', null);
         expect(promptKeys($response))->toBe(['choose_language', 'choose_language', 'choose_language'])
             ->and(promptLanguages($response))->toBe(['twi', 'ewe', 'eng']);
     });
@@ -103,18 +113,18 @@ describe('choosing a language', function () {
 
         $response = sendCallInput($uuid, ['text' => 'Aane']);
 
-        $response->assertOk()->assertJsonPath('reply.state', 'main_menu');
+        $response->assertOk()->assertJsonPath('reply.state', 'Main menu');
         expect(promptKeys($response))->toBe(['greeting', 'main_menu'])
-            ->and($customer->fresh()->preferred_language)->toBe(Language::Twi);
+            ->and($customer->fresh()->preferredLanguage->code)->toBe('twi');
     });
 
     test('saving the language when the caller presses its keypad number', function () {
         $customer = Customer::factory()->withoutLanguage()->create(['phone_number' => '233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
-        sendCallInput($uuid, ['digits' => '1'])->assertJsonPath('reply.state', 'main_menu');
+        sendCallInput($uuid, ['digits' => '1'])->assertJsonPath('reply.state', 'Main menu');
 
-        expect($customer->fresh()->preferred_language)->toBe(Language::Twi);
+        expect($customer->fresh()->preferredLanguage->code)->toBe('twi');
     });
 
     test('asking again when the answer is not understood', function (array $input) {
@@ -122,7 +132,7 @@ describe('choosing a language', function () {
 
         $response = sendCallInput($uuid, $input);
 
-        $response->assertJsonPath('reply.state', 'choose_language')->assertJsonPath('reply.ended', false);
+        $response->assertJsonPath('reply.state', 'Choose language')->assertJsonPath('reply.ended', false);
         expect(promptKeys($response))->toBe(['not_understood', 'choose_language', 'choose_language', 'choose_language']);
     })->with([
         'misheard sentence' => [['text' => "I'm fine"]],
@@ -154,15 +164,25 @@ describe('choosing a language', function () {
         $final->assertJsonPath('reply.ended', true);
     });
 
-    test('continuing in Ewe when the caller presses its keypad number', function () {
+    test('continuing in Ewe, with the primary language\'s audio where Ewe has no recording', function () {
         $customer = Customer::factory()->withoutLanguage()->create(['phone_number' => '233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         $response = sendCallInput($uuid, ['digits' => '2']);
 
-        $response->assertJsonPath('reply.state', 'main_menu')->assertJsonPath('language.code', 'ewe');
-        expect(promptLanguages($response))->toBe(['ewe', 'ewe'])
-            ->and($customer->fresh()->preferred_language)->toBe(Language::Ewe);
+        $response->assertJsonPath('reply.state', 'Main menu')->assertJsonPath('language.code', 'ewe');
+        expect(promptLanguages($response))->toBe(['twi', 'twi'])
+            ->and($customer->fresh()->preferredLanguage->code)->toBe('ewe');
+    });
+
+    test('playing a step\'s own Ewe recording once it has one', function () {
+        Customer::factory()->speaking('ewe')->create(['phone_number' => '233244000001']);
+        $greeting = app(FlowPublisher::class)->live()->clips()->where('key', 'greeting')->sole();
+        $greeting->recordings()->updateOrCreate(['language_id' => language('ewe')->id], ['audio_path' => 'flow-audio/woezo.mp3']);
+
+        $response = placeCall('0244000001');
+
+        expect(promptLanguages($response))->toBe(['ewe', 'twi']);
     });
 
     test('continuing in English, recognised by the browser, when the caller says yes', function () {
@@ -172,29 +192,131 @@ describe('choosing a language', function () {
         $response = sendCallInput($uuid, ['transcript' => 'Yes']);
 
         $response->assertJsonPath('language.code', 'eng')->assertJsonPath('language.recognized_by_client', true);
-        expect($customer->fresh()->preferred_language)->toBe(Language::English);
+        expect($customer->fresh()->preferredLanguage->code)->toBe('eng');
+    });
+});
+
+describe('managed languages', function () {
+    test('asking a customer whose saved language was switched off or deleted to choose again', function (string $change) {
+        Customer::factory()->speaking('ewe')->create(['phone_number' => '233244000001']);
+        $change === 'deleted' ? language('ewe')->delete() : language('ewe')->update(['enabled' => false]);
+
+        $response = placeCall('0244000001');
+
+        $response->assertJsonPath('reply.state', 'Choose language');
+        expect(promptLanguages($response))->toBe(['twi', 'eng']);
+    })->with(['switched off', 'deleted']);
+
+    test('offering the languages in their order, each picked by its place', function () {
+        language('eng')->update(['position' => 0]);
+        Customer::factory()->withoutLanguage()->create(['phone_number' => '233244000001']);
+        $uuid = placeCall('0244000001')->json('call.uuid');
+
+        $response = sendCallInput($uuid, ['digits' => '1']);
+
+        expect(CallSession::query()->where('uuid', $uuid)->sole()->language->code)->toBe('eng')
+            ->and($response->json('language.code'))->toBe('eng');
+    });
+
+    test('asking for the keypad, without counting a misunderstanding, when the call language is keypad only', function () {
+        Storage::fake('local');
+        $keypadOnly = Language::factory()->keypadOnly()->create();
+        Customer::factory()->create(['phone_number' => '233244000001', 'preferred_language_id' => $keypadOnly->id]);
+        $recognizer = new FakeSpeechRecognizer(['should not be used']);
+        $this->app->instance(SpeechRecognizer::class, $recognizer);
+        $this->mock(AudioTranscoder::class)->shouldReceive('prepareForRecognition')->andReturn(new PreparedAudio('clean-wav', 1.0));
+        $uuid = placeCall('0244000001')->json('call.uuid');
+
+        $response = $this->post(route('calls.utterances.store', $uuid), ['audio' => UploadedFile::fake()->createWithContent('utterance.wav', 'RIFF')->mimeType('audio/wav')], ['Accept' => 'application/json']);
+
+        $response->assertJsonPath('reply.suggest_keypad', true)->assertJsonPath('reply.state', 'Main menu');
+        expect($recognizer->received)->toBe([])
+            ->and(CallSession::query()->where('uuid', $uuid)->sole()->contextValue('misunderstood_attempts'))->toBeNull();
+    });
+
+    test('keeping the language of past calls after it is deleted', function () {
+        $call = CallSession::factory()->speaking('ewe')->create();
+        language('ewe')->delete();
+
+        expect($call->fresh()->language->code)->toBe('ewe');
+    });
+});
+
+describe('published and draft flows', function () {
+    test('calls use the published flow, and the draft only when testing it', function () {
+        Customer::factory()->create(['phone_number' => '233244000001']);
+        $draft = app(FlowPublisher::class)->draft();
+        $greeting = $draft->steps()->where('name', 'Greeting')->sole();
+        $greeting->update(['name' => 'Draft greeting']);
+        $greeting->promptItems()->where('placeholder', 'customer_name')->delete();
+
+        $live = placeCall('0244000001');
+        $test = placeDraftCall('0244000001');
+
+        $live->assertJsonPath('call.flow_version', 1);
+        $test->assertJsonPath('call.flow_version', 2);
+        expect(spokenTexts($live))->not->toBe([])
+            ->and(spokenTexts($test))->toBe([]);
+    });
+
+    test('a call in progress keeps the version it started on after publishing', function () {
+        Customer::factory()->create(['phone_number' => '233244000001']);
+        $uuid = placeCall('0244000001')->json('call.uuid');
+        $draft = app(FlowPublisher::class)->draft();
+        $draft->steps()->where('name', 'Balance')->where('type', 'branch')->sole()->update(['keypad_digit' => '7']);
+        app(FlowPublisher::class)->publish($draft);
+
+        $response = sendCallInput($uuid, ['digits' => '1']);
+
+        $response->assertJsonPath('reply.intent', 'Balance');
+        expect(placeCall('0244000001')->json('call.flow_version'))->toBe(2);
+    });
+
+    test('runs steps added in the builder', function () {
+        Customer::factory()->create(['phone_number' => '233244000001']);
+        $draft = app(FlowPublisher::class)->draft();
+        $editor = app(FlowEditor::class);
+        $branch = $draft->steps()->where('name', 'Balance')->where('type', 'branch')->sole();
+        $editor->addStep($draft, $branch, 0, StepType::EndCall->value);
+
+        $uuid = placeDraftCall('0244000001')->json('call.uuid');
+        $response = sendCallInput($uuid, ['digits' => '1']);
+
+        $response->assertJsonPath('reply.ended', true);
+        expect(promptKeys($response))->toBe([]);
+    });
+
+    test('takes the otherwise branch when it has steps, without counting a misunderstanding', function () {
+        Customer::factory()->create(['phone_number' => '233244000001']);
+        $draft = app(FlowPublisher::class)->draft();
+        $otherwise = $draft->steps()->where('name', 'Otherwise')->whereHas('parent', fn ($query) => $query->where('name', 'Main menu'))->sole();
+        app(FlowEditor::class)->addStep($draft, $otherwise, 0, StepType::EndCall->value);
+
+        $uuid = placeDraftCall('0244000001')->json('call.uuid');
+
+        sendCallInput($uuid, ['text' => 'hmm'])->assertJsonPath('reply.ended', true)->assertJsonPath('reply.intent', 'Otherwise');
     });
 });
 
 describe('when remembering languages is switched off', function () {
     test('asks a customer with a saved language to choose again', function () {
         app(ConversationSettings::class)->setRemembersLanguage(false);
-        Customer::factory()->create(['phone_number' => '233244000001', 'preferred_language' => Language::Twi]);
+        Customer::factory()->create(['phone_number' => '233244000001', 'preferred_language_id' => language('twi')->id]);
 
         $response = placeCall('0244000001');
 
-        $response->assertJsonPath('reply.state', 'choose_language');
+        $response->assertJsonPath('reply.state', 'Choose language');
     });
 
     test('uses the chosen language for the call without saving it', function () {
         app(ConversationSettings::class)->setRemembersLanguage(false);
-        $customer = Customer::factory()->create(['phone_number' => '233244000001', 'preferred_language' => Language::Twi]);
+        $customer = Customer::factory()->create(['phone_number' => '233244000001', 'preferred_language_id' => language('twi')->id]);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         $response = sendCallInput($uuid, ['digits' => '2']);
 
         $response->assertJsonPath('language.code', 'ewe');
-        expect($customer->fresh()->preferred_language)->toBe(Language::Twi);
+        expect($customer->fresh()->preferredLanguage->code)->toBe('twi');
     });
 
     test('registers a new caller without a saved language', function () {
@@ -204,20 +326,20 @@ describe('when remembering languages is switched off', function () {
         sendCallInput($uuid, ['text' => 'aane']);
         sendCallInput($uuid, ['text' => 'kwesi mensah']);
 
-        sendCallInput($uuid, ['text' => 'aane'])->assertJsonPath('reply.state', 'main_menu');
+        sendCallInput($uuid, ['text' => 'aane'])->assertJsonPath('reply.state', 'Main menu');
 
-        $this->assertDatabaseHas('customers', ['phone_number' => '233209999999', 'preferred_language' => null]);
+        $this->assertDatabaseHas('customers', ['phone_number' => '233209999999', 'preferred_language_id' => null]);
     });
 });
 
 describe('browser-recognised speech', function () {
     test('records a browser transcript as a speech turn and answers it', function () {
-        Customer::factory()->create(['phone_number' => '233244000001', 'preferred_language' => Language::English, 'balance_pesewas' => 9_900]);
+        Customer::factory()->create(['phone_number' => '233244000001', 'preferred_language_id' => language('eng')->id, 'balance_pesewas' => 9_900]);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         $response = sendCallInput($uuid, ['transcript' => 'what is my balance']);
 
-        $response->assertJsonPath('reply.intent', 'check_balance');
+        $response->assertJsonPath('reply.intent', 'Balance');
         expect(spokenTexts($response))->toBe(['99 cedis']);
         $this->assertDatabaseHas('call_turns', ['input_mode' => 'speech', 'text' => 'what is my balance', 'audio_path' => null]);
     });
@@ -242,7 +364,7 @@ describe('misunderstood answers', function () {
 
         $response = sendCallInput($uuid, ['text' => 'hmm']);
 
-        $response->assertJsonPath('reply.state', 'main_menu');
+        $response->assertJsonPath('reply.state', 'Main menu');
         expect(promptKeys($response))->toBe(['not_understood', 'main_menu']);
     });
 
@@ -267,7 +389,7 @@ describe('misunderstood answers', function () {
 
         $response = sendCallInput($uuid, ['text' => 'fifty']);
 
-        $response->assertJsonPath('reply.state', 'apply_amount');
+        $response->assertJsonPath('reply.state', 'Loan amount');
     });
 });
 
@@ -286,7 +408,7 @@ describe('signing up an unknown caller', function () {
         $this->assertDatabaseHas('customers', [
             'phone_number' => '233209999999',
             'full_name' => 'Kwesi Mensah',
-            'preferred_language' => Language::Twi->value,
+            'preferred_language_id' => language('twi')->id,
             'balance_pesewas' => 0,
             'registered_via' => RegisteredVia::Voice->value,
         ]);
@@ -300,7 +422,7 @@ describe('signing up an unknown caller', function () {
 
         $response = sendCallInput($uuid, ['text' => 'daabi']);
 
-        $response->assertJsonPath('reply.state', 'ask_name');
+        $response->assertJsonPath('reply.state', 'Ask name');
         $this->assertDatabaseCount('customers', 0);
     });
 
@@ -323,7 +445,7 @@ describe('self-service actions', function () {
 
         $response = sendCallInput($uuid, ['text' => 'me pɛ sɛ mehwɛ me sika dodoɔ']);
 
-        $response->assertJsonPath('reply.intent', 'check_balance')->assertJsonPath('reply.state', 'anything_else');
+        $response->assertJsonPath('reply.intent', 'Balance')->assertJsonPath('reply.state', 'Anything else?');
         expect(promptKeys($response))->toBe(['balance_is', 'anything_else'])
             ->and(spokenTexts($response))->toBe(['1,250 cedis 50 pesewas']);
     });
@@ -337,7 +459,7 @@ describe('self-service actions', function () {
 
         $response = sendCallInput($uuid, ['text' => 'aane']);
 
-        expect(spokenTexts($confirmation))->toBe(['1,500 cedis for 6 months']);
+        expect(spokenTexts($confirmation))->toBe(['1,500 cedis', '6 months']);
         $application = LoanApplication::query()->sole();
         expect($application->customer_id)->toBe($customer->id)
             ->and($application->amount_pesewas)->toBe(150_000)
@@ -345,7 +467,7 @@ describe('self-service actions', function () {
             ->and($application->status)->toBe(LoanApplicationStatus::Pending)
             ->and($application->call_session_id)->toBe(CallSession::query()->where('uuid', $uuid)->value('id'));
         expect(promptKeys($response))->toBe(['application_submitted', 'anything_else'])
-            ->and(spokenTexts($response))->toBe([implode(' ', str_split($application->reference))]);
+            ->and(spokenTexts($response))->toBe(['reference '.implode(' ', str_split($application->reference))]);
     });
 
     test('taking the loan amount from keypad digits ending with hash', function () {
@@ -355,8 +477,8 @@ describe('self-service actions', function () {
 
         $response = sendCallInput($uuid, ['digits' => '2500#']);
 
-        $response->assertJsonPath('reply.state', 'apply_term');
-        expect(CallSession::query()->where('uuid', $uuid)->first()->contextValue('amount_pesewas'))->toBe(250_000);
+        $response->assertJsonPath('reply.state', 'Loan term (months)')->assertJsonPath('reply.step_type', 'ask_number');
+        expect(CallSession::query()->where('uuid', $uuid)->first()->contextValue('answers.amount'))->toEqual(2500);
     });
 
     test('asking for the amount again when it is outside the allowed range', function () {
@@ -366,7 +488,7 @@ describe('self-service actions', function () {
 
         $response = sendCallInput($uuid, ['text' => 'fifty']);
 
-        $response->assertJsonPath('reply.state', 'apply_amount');
+        $response->assertJsonPath('reply.state', 'Loan amount');
         expect(promptKeys($response))->toBe(['amount_out_of_range', 'ask_amount'])
             ->and(spokenTexts($response))->toBe(['100 cedis to 10,000 cedis']);
     });
@@ -393,7 +515,7 @@ describe('self-service actions', function () {
         $response = sendCallInput($uuid, ['digits' => '3']);
 
         expect(promptKeys($response))->toBe(['application_status_intro', 'status_approved', 'anything_else'])
-            ->and(spokenTexts($response))->toBe(['2,000 cedis, reference L N 0 0 4 2']);
+            ->and(spokenTexts($response))->toBe(['2,000 cedis', 'reference L N 0 0 4 2']);
     });
 
     test('reading out the next repayment of a disbursed loan', function () {
@@ -424,7 +546,7 @@ describe('self-service actions', function () {
 
         $response = sendCallInput($uuid, ['text' => 'I want to speak to an agent']);
 
-        $response->assertJsonPath('reply.state', 'main_menu');
+        $response->assertJsonPath('reply.state', 'Main menu');
         expect(promptKeys($response))->toBe(['agent_unavailable', 'main_menu']);
     });
 
@@ -451,8 +573,8 @@ describe('spoken utterances', function () {
 
         $response = $this->post(route('calls.utterances.store', $uuid), ['audio' => UploadedFile::fake()->createWithContent('utterance.wav', 'RIFF-raw-audio')->mimeType('audio/wav')], ['Accept' => 'application/json']);
 
-        $response->assertOk()->assertJsonPath('reply.heard', 'me sika dodoɔ')->assertJsonPath('reply.intent', 'check_balance');
-        expect($recognizer->received)->toBe([['mime_type' => 'audio/wav', 'language' => Language::Twi, 'bytes' => 9]]);
+        $response->assertOk()->assertJsonPath('reply.heard', 'me sika dodoɔ')->assertJsonPath('reply.intent', 'Balance');
+        expect($recognizer->received)->toBe([['mime_type' => 'audio/wav', 'language' => 'twi', 'bytes' => 9]]);
         $turn = CallSession::query()->where('uuid', $uuid)->first()->turns()->whereNotNull('audio_path')->sole();
         Storage::disk('local')->assertExists($turn->audio_path);
     });
@@ -480,7 +602,7 @@ describe('spoken utterances', function () {
 
         $response = $this->post(route('calls.utterances.store', $uuid), ['audio' => UploadedFile::fake()->createWithContent('utterance.wav', 'RIFF')->mimeType('audio/wav')], ['Accept' => 'application/json']);
 
-        $response->assertJsonPath('reply.suggest_keypad', true)->assertJsonPath('reply.state', 'main_menu');
+        $response->assertJsonPath('reply.suggest_keypad', true)->assertJsonPath('reply.state', 'Main menu');
         expect(promptKeys($response))->toBe(['speech_unavailable', 'main_menu']);
     });
 
@@ -496,7 +618,7 @@ describe('spoken utterances', function () {
 
 describe('ended calls', function () {
     test('returns 409 when input is sent to a call that has ended', function () {
-        $call = CallSession::factory()->inState(CallState::Ended)->create(['ended_at' => now()]);
+        $call = CallSession::factory()->ended()->create();
 
         $this->actingAs(User::factory()->create())->postJson(route('calls.inputs.store', $call), ['digits' => '1'])->assertConflict();
     });
@@ -506,7 +628,7 @@ describe('ended calls', function () {
 
         $this->actingAs(User::factory()->create())->deleteJson(route('calls.destroy', $call))->assertNoContent();
 
-        expect($call->fresh()->state)->toBe(CallState::Ended)
+        expect($call->fresh()->state)->toBe('ended')
             ->and($call->fresh()->ended_at)->not->toBeNull();
     });
 });

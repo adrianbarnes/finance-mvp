@@ -2,26 +2,34 @@
 
 namespace App\Services\Conversation;
 
-use App\Enums\CallState;
-use App\Enums\Intent;
-
 /**
  * What the assistant says back, as an ordered list of segments. A segment
- * is either a voice prompt (recorded audio, or its text as a fallback) or
- * dynamic English speech such as an amount or date.
+ * is either a recorded clip (or its wording as a fallback) or dynamic
+ * English speech such as an amount or date.
  */
 final readonly class AssistantReply
 {
+    public const string Ended = 'ended';
+
     /**
      * @param  list<array{type: string, key?: string, text: string, audio_url?: string|null, language: string}>  $segments
+     * @param  string  $state  The step the call now waits on, or "ended"
+     * @param  string|null  $intent  What the caller's answer was taken to mean, e.g. the branch picked
+     * @param  string|null  $stepType  The type of step the call waits on, e.g. "ask_number"
      */
     public function __construct(
         public array $segments,
-        public CallState $state,
+        public string $state,
         public ?string $heard = null,
-        public ?Intent $intent = null,
+        public ?string $intent = null,
         public bool $suggestKeypad = false,
+        public ?string $stepType = null,
     ) {}
+
+    public function hasEnded(): bool
+    {
+        return $this->state === self::Ended;
+    }
 
     public function text(): string
     {
@@ -37,15 +45,16 @@ final readonly class AssistantReply
     }
 
     /**
-     * @return array{state: string, ended: bool, heard: string|null, intent: string|null, suggest_keypad: bool, segments: list<array<string, mixed>>}
+     * @return array{state: string, step_type: string|null, ended: bool, heard: string|null, intent: string|null, suggest_keypad: bool, segments: list<array<string, mixed>>}
      */
     public function toArray(): array
     {
         return [
-            'state' => $this->state->value,
-            'ended' => $this->state === CallState::Ended,
+            'state' => $this->state,
+            'step_type' => $this->stepType,
+            'ended' => $this->hasEnded(),
             'heard' => $this->heard,
-            'intent' => $this->intent?->value,
+            'intent' => $this->intent,
             'suggest_keypad' => $this->suggestKeypad,
             'segments' => $this->segments,
         ];

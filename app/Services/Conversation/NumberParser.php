@@ -2,7 +2,7 @@
 
 namespace App\Services\Conversation;
 
-use App\Enums\Language;
+use App\Models\Language;
 
 /**
  * Extracts a number from a transcript: digits ("1,500"), English number
@@ -41,7 +41,7 @@ class NumberParser
      */
     private function parseWords(array $words, Language $language): ?float
     {
-        $localWords = config("conversation.number_words.{$language->value}", []);
+        $localWords = $language->number_words;
         $total = 0;
         $current = 0;
         $found = false;

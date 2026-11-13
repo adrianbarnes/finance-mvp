@@ -25,7 +25,7 @@ test('resets the saved language so the next call asks again', function () {
 
     Livewire::test(Show::class, ['customer' => $customer])->call('resetLanguage');
 
-    expect($customer->fresh()->preferred_language)->toBeNull();
+    expect($customer->fresh()->preferred_language_id)->toBeNull();
 });
 
 test('updates the status and next repayment of a loan application', function () {

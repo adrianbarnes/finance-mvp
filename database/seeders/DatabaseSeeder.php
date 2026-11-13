@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
-            VoicePromptSeeder::class,
+            CallFlowSeeder::class,
             DemoCustomerSeeder::class,
         ]);
     }

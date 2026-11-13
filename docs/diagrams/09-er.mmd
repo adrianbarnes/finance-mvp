@@ -1,14 +1,31 @@
 erDiagram
+    LANGUAGES ||--o{ CUSTOMERS : "saved by"
+    LANGUAGES ||--o{ CALL_SESSIONS : "spoken in"
     CUSTOMERS ||--o{ LOAN_APPLICATIONS : submits
     CUSTOMERS ||--o{ CALL_SESSIONS : "takes part in"
     CALL_SESSIONS ||--|{ CALL_TURNS : contains
     CALL_SESSIONS ||--o{ LOAN_APPLICATIONS : originates
     CALL_SESSIONS ||--o{ KHAYA_API_CALLS : uses
+    LANGUAGES {
+        bigint id PK
+        string code UK "ISO 639-3"
+        string name
+        string speech_recognition "khaya, browser or keypad"
+        string khaya_code "nullable"
+        json selection_words
+        json yes_words
+        json no_words
+        json number_words
+        int position "offer order and key"
+        bool enabled
+        bool is_primary
+        timestamp deleted_at "soft delete"
+    }
     CUSTOMERS {
         bigint id PK
         string full_name "nullable"
         string phone_number UK "233XXXXXXXXX"
-        string preferred_language "twi ewe eng, nullable - reset to ask again"
+        bigint preferred_language_id FK "nullable - reset to ask again"
         bigint balance_pesewas
         string registered_via "panel or voice"
     }
@@ -30,8 +47,10 @@ erDiagram
         string caller_number
         string channel "webrtc or ivr"
         string direction "inbound or outbound"
-        string language "nullable until chosen"
-        string state
+        bigint language_id FK "nullable until chosen"
+        bigint call_flow_id FK "version fixed at the start"
+        bigint current_step_id FK "step waiting for an answer"
+        string state "type of the waiting step, or ended"
         json context "no-input count, pending amount, term, name"
         timestamp started_at
         timestamp ended_at
@@ -57,11 +76,62 @@ erDiagram
         int latency_ms
         timestamp created_at
     }
-    VOICE_PROMPTS {
+    CALL_FLOWS {
         bigint id PK
-        string key "step, grouped by function in config"
-        string language
-        text text
-        string audio_path "voice-prompts/function/step/language - MP3"
-        string telephony_audio_path "8 kHz WAV for IVR"
+        int version UK
+        string status "draft, published or archived"
+        json settings "no-input replays, misunderstood limit, shared clips"
+        timestamp published_at
     }
+    FLOW_STEPS {
+        bigint id PK
+        bigint call_flow_id FK
+        bigint parent_id FK "branch it sits in, or the step a branch belongs to"
+        int position
+        string type "message, choice, check, ask_number, ask_speech, choose_language, do, go_to, transfer, end_call, branch"
+        string name
+        string keypad_digit "menu options"
+        json config "type settings"
+        bool is_otherwise
+        bigint go_to_step_id FK
+    }
+    STEP_KEYWORDS {
+        bigint id PK
+        bigint flow_step_id FK
+        bigint language_id FK
+        json words
+    }
+    STEP_PROMPT_ITEMS {
+        bigint id PK
+        bigint flow_step_id FK
+        string slot "prompt, reprompt, out_of_range"
+        int position
+        bigint audio_clip_id FK "a clip"
+        string placeholder "or a value spoken at call time"
+    }
+    AUDIO_CLIPS {
+        bigint id PK
+        bigint call_flow_id FK
+        string key "unique per version"
+        string group
+    }
+    CLIP_RECORDINGS {
+        bigint id PK
+        bigint audio_clip_id FK
+        bigint language_id FK
+        text text
+        string audio_path "flow-audio/sha1.mp3, shared by versions"
+        string telephony_audio_path "8 kHz WAV for IVR"
+        string original_filename
+        int duration_ms
+    }
+    CALL_FLOWS ||--o{ FLOW_STEPS : contains
+    FLOW_STEPS ||--o{ FLOW_STEPS : "branches and nested steps"
+    FLOW_STEPS ||--o{ STEP_KEYWORDS : "matched by"
+    FLOW_STEPS ||--o{ STEP_PROMPT_ITEMS : speaks
+    CALL_FLOWS ||--o{ AUDIO_CLIPS : owns
+    AUDIO_CLIPS ||--o{ STEP_PROMPT_ITEMS : "used in"
+    AUDIO_CLIPS ||--o{ CLIP_RECORDINGS : "recording per language"
+    LANGUAGES ||--o{ CLIP_RECORDINGS : "recorded in"
+    LANGUAGES ||--o{ STEP_KEYWORDS : "spoken in"
+    CALL_FLOWS ||--o{ CALL_SESSIONS : "version run by"

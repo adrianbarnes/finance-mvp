@@ -2,9 +2,10 @@
 
 use App\Http\Controllers\CallController;
 use App\Livewire\CallConsole;
+use App\Livewire\CallFlows\Builder as CallFlowBuilder;
 use App\Livewire\Customers\Index as CustomersIndex;
 use App\Livewire\Customers\Show as CustomersShow;
-use App\Livewire\VoicePrompts\Index as VoicePromptsIndex;
+use App\Livewire\Languages\Index as LanguagesIndex;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -14,7 +15,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::livewire('customers', CustomersIndex::class)->name('customers.index');
     Route::livewire('customers/{customer}', CustomersShow::class)->name('customers.show');
-    Route::livewire('voice-prompts', VoicePromptsIndex::class)->name('voice-prompts.index');
+    Route::livewire('ivr-flow', CallFlowBuilder::class)->name('call-flows.builder');
+    Route::livewire('languages', LanguagesIndex::class)->name('languages.index');
     Route::livewire('call-console', CallConsole::class)->name('call-console');
 
     Route::post('calls', [CallController::class, 'store'])->name('calls.store');

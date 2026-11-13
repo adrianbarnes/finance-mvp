@@ -21,6 +21,12 @@ class CallConsole extends Component
 {
     public bool $remembersLanguage = true;
 
+    /**
+     * Call the draft IVR flow instead of the published one, to try changes
+     * before publishing them. Read by the browser phone when a call starts.
+     */
+    public bool $useDraft = false;
+
     public function mount(ConversationSettings $settings): void
     {
         $this->remembersLanguage = $settings->remembersLanguage();
@@ -44,7 +50,7 @@ class CallConsole extends Component
     #[Computed]
     public function customers(): Collection
     {
-        return Customer::query()->orderBy('full_name')->limit(200)->get(['id', 'full_name', 'phone_number', 'preferred_language']);
+        return Customer::query()->orderBy('full_name')->limit(200)->with('preferredLanguage')->get(['id', 'full_name', 'phone_number', 'preferred_language_id']);
     }
 
     public function render(): View

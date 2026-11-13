@@ -32,8 +32,8 @@
                     </flux:table.cell>
                     <flux:table.cell>{{ $customer->phone_number }}</flux:table.cell>
                     <flux:table.cell>
-                        @if ($customer->preferred_language)
-                            <flux:badge size="sm">{{ $customer->preferred_language->label() }}</flux:badge>
+                        @if ($customer->preferredLanguage)
+                            <flux:badge size="sm" :color="$customer->preferredLanguage->enabled ? 'zinc' : 'amber'">{{ $customer->preferredLanguage->name }}</flux:badge>
                         @else
                             <flux:badge size="sm" color="amber">{{ __('Ask on call') }}</flux:badge>
                         @endif
@@ -60,7 +60,7 @@
             <flux:select wire:model="preferredLanguage" :label="__('Language')">
                 <flux:select.option value="">{{ __('Ask on first call') }}</flux:select.option>
                 @foreach ($languages as $language)
-                    <flux:select.option :value="$language->value">{{ $language->label() }}</flux:select.option>
+                    <flux:select.option :value="$language->code">{{ $language->name }}</flux:select.option>
                 @endforeach
             </flux:select>
 

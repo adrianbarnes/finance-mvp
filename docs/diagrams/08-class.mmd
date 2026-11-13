@@ -1,7 +1,7 @@
 classDiagram
     class BrowserPhone {
         <<JavaScript POC>>
-        +call(callerNumber)
+        +call(callerNumber, useDraft)
         +pressKey(digit)
         -voiceActivityDetection()
         -browserSpeechRecognition() English
@@ -14,26 +14,53 @@ classDiagram
         +input(StoreCallInputRequest, CallSession)
         +destroy(CallSession)
     }
-    class MnotifyWebhookController {
-        <<later phase>>
-    }
     class ConversationEngine {
-        +startCall(callerNumber, channel, direction)
+        <<runs the IVR flow>>
+        +startCall(callerNumber, channel, direction, useDraft)
         +handleSpeech(CallSession, audio, mimeType) AssistantReply
         +handleInput(CallSession, CallInput) AssistantReply
         +hangUp(CallSession)
+        -runFrom(call, step)
+        -askAgain(call, step)
+        -speakStep(call, step, slot)
     }
     class IntentResolver {
-        +resolve(transcript, Language, expectsConfirmation) Intent
-        +resolveKeypad(digits, expectsConfirmation) Intent
+        +matchBranch(branches, transcript, Language) FlowStep
+        +branchByKeypad(branches, digits) FlowStep
         +chosenLanguage(transcript) Language
         +chosenLanguageByKeypad(digits) Language
     }
     class NumberParser {
         +parse(transcript, Language) float
     }
-    class VoicePromptLibrary {
-        +segment(key, Language) array
+    class PromptAudioResolver {
+        +languageFor(step, slot, callLanguage, languages) Language
+        +status(step, language, languages) array
+    }
+    class FlowPublisher {
+        +live() CallFlow
+        +draft() CallFlow
+        +problems(draft) list
+        +publish(draft) list
+        +discardDraft() CallFlow
+        +copy(flow) CallFlow
+    }
+    class FlowEditor {
+        +addStep(flow, branch, position, kind) FlowStep
+        +addBranch(choice) FlowStep
+        +moveStep(step, branch, position)
+        +moveBranch(branch, position)
+        +delete(step)
+    }
+    class DefaultCallFlow {
+        +create() CallFlow
+    }
+    class ClipRecordingStore {
+        +store(clip, language, audio, filename) ClipRecording
+        +remove(recording)
+    }
+    class Builder {
+        <<Livewire IVR flow page>>
     }
     class DynamicSpeech {
         +segment(text) array
@@ -57,34 +84,52 @@ classDiagram
     class AbenaTextToSpeech {
         +synthesize(text, voice) string
     }
-    class VoicePromptAudioStore {
-        +store(VoicePrompt, sourceAudio)
-    }
-    class VoicePromptBundle {
-        +export(prompts) array
-        +import() array
-    }
     class Language {
-        <<enumeration>>
-        Twi = twi
-        Ewe = ewe
-        English = eng (browser ASR)
-        Fante = fat (later)
-        Ga = gaa (later)
+        <<model, soft deletes>>
+        +code
+        +speech_recognition khaya browser keypad
+        +position
+        +enabled
+        +is_primary
     }
+    class CallFlow {
+        +version
+        +status draft published archived
+        +settings
+    }
+    class FlowStep {
+        +type
+        +parent_id
+        +position
+        +keypad_digit
+        +config
+        +is_otherwise
+        +go_to_step_id
+    }
+    class AudioClip
+    class ClipRecording
     BrowserPhone ..> CallController : HTTPS JSON and WAV
     CallController --> ConversationEngine
-    MnotifyWebhookController --> ConversationEngine
-    ConversationEngine --> SpeechRecognizer
-    ConversationEngine --> AudioTranscoder
+    ConversationEngine --> FlowPublisher : live or draft version
     ConversationEngine --> IntentResolver
     ConversationEngine --> NumberParser
-    ConversationEngine --> VoicePromptLibrary
+    ConversationEngine --> PromptAudioResolver
+    ConversationEngine --> SpeechRecognizer
+    ConversationEngine --> AudioTranscoder
     ConversationEngine --> DynamicSpeech
     SpeechRecognizer <|.. KhayaSpeechRecognizer
     SpeechRecognizer <|.. FakeSpeechRecognizer
     KhayaSpeechRecognizer --> KhayaQuotaGuard
     DynamicSpeech --> AbenaTextToSpeech
-    VoicePromptAudioStore --> AudioTranscoder
-    VoicePromptBundle ..> VoicePromptAudioStore
-    ConversationEngine ..> Language
+    Builder --> FlowEditor
+    Builder --> FlowPublisher
+    Builder --> ClipRecordingStore
+    Builder --> PromptAudioResolver
+    FlowPublisher --> DefaultCallFlow
+    DefaultCallFlow --> ClipRecordingStore
+    ClipRecordingStore --> AudioTranscoder
+    CallFlow "1" *-- "many" FlowStep
+    CallFlow "1" *-- "many" AudioClip
+    FlowStep "1" o-- "many" FlowStep : branches and nested steps
+    AudioClip "1" *-- "many" ClipRecording
+    ClipRecording --> Language

@@ -4,8 +4,6 @@ namespace App\Models;
 
 use App\Enums\CallChannel;
 use App\Enums\CallDirection;
-use App\Enums\CallState;
-use App\Enums\Language;
 use Carbon\CarbonImmutable;
 use Database\Factories\CallSessionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -22,16 +20,21 @@ use Illuminate\Support\Str;
  * @property string $caller_number
  * @property CallChannel $channel
  * @property CallDirection $direction
- * @property Language|null $language
- * @property CallState $state
+ * @property int|null $language_id
+ * @property int|null $call_flow_id
+ * @property int|null $current_step_id
+ * @property string $state The type of step the call waits on, or "ended"
  * @property array<string, mixed>|null $context
  * @property CarbonImmutable $started_at
  * @property CarbonImmutable|null $ended_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read Customer|null $customer
+ * @property-read Language|null $language
+ * @property-read CallFlow|null $callFlow
+ * @property-read FlowStep|null $currentStep
  */
-#[Fillable(['uuid', 'customer_id', 'caller_number', 'channel', 'direction', 'language', 'state', 'context', 'started_at', 'ended_at'])]
+#[Fillable(['uuid', 'customer_id', 'caller_number', 'channel', 'direction', 'language_id', 'call_flow_id', 'current_step_id', 'state', 'context', 'started_at', 'ended_at'])]
 class CallSession extends Model
 {
     /** @use HasFactory<CallSessionFactory> */
@@ -53,8 +56,6 @@ class CallSession extends Model
         return [
             'channel' => CallChannel::class,
             'direction' => CallDirection::class,
-            'language' => Language::class,
-            'state' => CallState::class,
             'context' => 'array',
             'started_at' => 'datetime',
             'ended_at' => 'datetime',
@@ -72,6 +73,34 @@ class CallSession extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * The call's language, kept for history even if it is later deleted.
+     *
+     * @return BelongsTo<Language, $this>
+     */
+    public function language(): BelongsTo
+    {
+        return $this->belongsTo(Language::class)->withTrashed();
+    }
+
+    /**
+     * The flow version the call runs, fixed when it starts.
+     *
+     * @return BelongsTo<CallFlow, $this>
+     */
+    public function callFlow(): BelongsTo
+    {
+        return $this->belongsTo(CallFlow::class);
+    }
+
+    /**
+     * @return BelongsTo<FlowStep, $this>
+     */
+    public function currentStep(): BelongsTo
+    {
+        return $this->belongsTo(FlowStep::class, 'current_step_id');
     }
 
     /**

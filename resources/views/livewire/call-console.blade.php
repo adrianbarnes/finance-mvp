@@ -5,13 +5,22 @@
             <flux:subheading>{{ __('Call the voice assistant from the browser. Speak naturally — speaking or pressing a key while it talks interrupts it. Use a headset to stop the assistant hearing itself.') }}</flux:subheading>
         </div>
 
-        <flux:switch
-            wire:model.live="remembersLanguage"
-            :label="__('Remember caller languages')"
-            :description="__('Off: every call starts with the language prompt and nothing is saved.')"
-            align="left"
-            class="max-w-xs"
-        />
+        <div class="flex flex-col gap-3">
+            <flux:switch
+                wire:model.live="useDraft"
+                :label="__('Test draft')"
+                :description="__('On: calls use the draft IVR flow instead of the published one.')"
+                align="left"
+                class="max-w-xs"
+            />
+            <flux:switch
+                wire:model.live="remembersLanguage"
+                :label="__('Remember caller languages')"
+                :description="__('Off: every call starts with the language prompt and nothing is saved.')"
+                align="left"
+                class="max-w-xs"
+            />
+        </div>
     </div>
 
     <div
@@ -35,7 +44,7 @@
                 <flux:input x-model="callerNumber" :label="__('Caller number')" list="customer-numbers" placeholder="0244123456" x-bind:disabled="inCall" />
                 <datalist id="customer-numbers">
                     @foreach ($this->customers as $customer)
-                        <option value="{{ $customer->phone_number }}">{{ $customer->full_name ?? __('(no name)') }} — {{ $customer->preferred_language?->label() ?? __('no language') }}</option>
+                        <option value="{{ $customer->phone_number }}">{{ $customer->full_name ?? __('(no name)') }} — {{ $customer->preferredLanguage?->name ?? __('no language') }}</option>
                     @endforeach
                 </datalist>
                 <flux:text class="text-xs">{{ __('Use any other number to test sign-up of an unknown caller.') }}</flux:text>

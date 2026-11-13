@@ -1,0 +1,19 @@
+sequenceDiagram
+    actor Tester
+    participant Builder as IVR flow builder
+    participant FF as AudioTranscoder (ffmpeg)
+    participant Store as flow-audio storage
+    participant DB as Database
+    participant Phone as Browser phone
+    participant Engine as ConversationEngine
+    Tester->>Builder: 1. pick the audio language, upload a recording on a step
+    Builder->>FF: 2. convert to MP3 (browser) and 8 kHz WAV (IVR)
+    FF->>Store: 3. flow-audio/sha1.mp3 and .wav, never overwritten
+    Builder->>DB: 4. save the recording on the draft's clip
+    Tester->>Phone: 5. Test draft on, place a call
+    Phone->>Engine: 6. start call with use_draft
+    Engine->>DB: 7. run the draft's steps
+    Tester->>Builder: 8. Publish
+    Builder->>DB: 9. check problems, archive the live version, draft becomes live
+    Builder->>DB: 10. copy it into a new draft, sharing audio files
+    Phone->>Engine: 11. new calls run the published version

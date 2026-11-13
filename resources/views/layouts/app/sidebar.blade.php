@@ -24,8 +24,11 @@
                     <flux:sidebar.item icon="users" :href="route('customers.index')" :current="request()->routeIs('customers.*')" wire:navigate>
                         {{ __('Customers') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="speaker-wave" :href="route('voice-prompts.index')" :current="request()->routeIs('voice-prompts.*')" wire:navigate>
-                        {{ __('Voice prompts') }}
+                    <flux:sidebar.item icon="share" :href="route('call-flows.builder')" :current="request()->routeIs('call-flows.*')" wire:navigate>
+                        {{ __('IVR flow') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="language" :href="route('languages.index')" :current="request()->routeIs('languages.*')" wire:navigate>
+                        {{ __('Languages') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>

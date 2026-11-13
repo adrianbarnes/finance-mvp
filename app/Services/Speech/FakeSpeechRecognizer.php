@@ -2,8 +2,8 @@
 
 namespace App\Services\Speech;
 
-use App\Enums\Language;
 use App\Models\CallSession;
+use App\Models\Language;
 use Throwable;
 
 /**
@@ -13,7 +13,7 @@ use Throwable;
 class FakeSpeechRecognizer implements SpeechRecognizer
 {
     /**
-     * @var list<array{mime_type: string, language: Language, bytes: int}>
+     * @var list<array{mime_type: string, language: string, bytes: int}>
      */
     public array $received = [];
 
@@ -24,7 +24,7 @@ class FakeSpeechRecognizer implements SpeechRecognizer
 
     public function transcribe(string $audio, string $mimeType, Language $language, ?CallSession $callSession = null): string
     {
-        $this->received[] = ['mime_type' => $mimeType, 'language' => $language, 'bytes' => strlen($audio)];
+        $this->received[] = ['mime_type' => $mimeType, 'language' => $language->code, 'bytes' => strlen($audio)];
 
         $response = array_shift($this->responses) ?? '';
 

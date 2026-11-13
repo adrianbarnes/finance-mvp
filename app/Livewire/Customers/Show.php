@@ -2,10 +2,10 @@
 
 namespace App\Livewire\Customers;
 
-use App\Enums\Language;
 use App\Enums\LoanApplicationStatus;
 use App\Models\CallSession;
 use App\Models\Customer;
+use App\Models\Language;
 use App\Models\LoanApplication;
 use App\Support\Cedis;
 use Flux\Flux;
@@ -79,13 +79,13 @@ class Show extends Component
         Flux::toast(variant: 'success', text: __('Customer updated.'));
     }
 
-    public function setLanguage(string $language): void
+    public function setLanguage(string $code): void
     {
-        $chosen = Language::tryFrom($language);
-        abort_if($chosen === null || ! in_array($chosen, Language::enabled(), true), 422);
+        $chosen = Language::query()->where('code', $code)->where('enabled', true)->first();
+        abort_if($chosen === null, 422);
 
-        $this->customer->update(['preferred_language' => $chosen]);
-        Flux::toast(text: __('Language set to :language.', ['language' => $chosen->label()]));
+        $this->customer->preferredLanguage()->associate($chosen)->save();
+        Flux::toast(text: __('Language set to :language.', ['language' => $chosen->name]));
     }
 
     /**
@@ -94,7 +94,7 @@ class Show extends Component
      */
     public function resetLanguage(): void
     {
-        $this->customer->update(['preferred_language' => null]);
+        $this->customer->update(['preferred_language_id' => null]);
         Flux::toast(text: __('Language reset. The next call will ask for a language.'));
     }
 
@@ -159,7 +159,7 @@ class Show extends Component
     public function render(): View
     {
         return view('livewire.customers.show', [
-            'languages' => Language::enabled(),
+            'languages' => Language::enabledInOrder(),
             'statuses' => LoanApplicationStatus::cases(),
         ])->title($this->customer->full_name ?? $this->customer->phone_number);
     }

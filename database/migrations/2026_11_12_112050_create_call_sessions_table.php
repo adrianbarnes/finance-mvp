@@ -18,7 +18,9 @@ return new class extends Migration
             $table->string('caller_number');
             $table->string('channel');
             $table->string('direction')->default('inbound');
-            $table->string('language')->nullable();
+            $table->foreignId('language_id')->nullable()->constrained('languages')->nullOnDelete();
+            $table->foreignId('call_flow_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('current_step_id')->nullable()->constrained('flow_steps')->nullOnDelete();
             $table->string('state');
             $table->json('context')->nullable();
             $table->timestamp('started_at');

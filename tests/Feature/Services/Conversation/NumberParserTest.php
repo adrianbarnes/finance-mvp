@@ -1,10 +1,9 @@
 <?php
 
-use App\Enums\Language;
 use App\Services\Conversation\NumberParser;
 
 test('reads amounts and months from transcripts', function (string $transcript, ?float $number) {
-    expect(app(NumberParser::class)->parse($transcript, Language::Twi))->toBe($number);
+    expect(app(NumberParser::class)->parse($transcript, language('twi')))->toBe($number);
 })->with([
     'digits with comma' => ['GHS 1,500', 1500.0],
     'decimal digits' => ['250.50 cedis', 250.5],
@@ -18,5 +17,5 @@ test('reads amounts and months from transcripts', function (string $transcript, 
 ]);
 
 test('reads Ewe month counts', function () {
-    expect(app(NumberParser::class)->parse('ɣleti ade', Language::Ewe))->toBe(6.0);
+    expect(app(NumberParser::class)->parse('ɣleti ade', language('ewe')))->toBe(6.0);
 });

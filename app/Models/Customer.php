@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\Language;
 use App\Enums\RegisteredVia;
 use App\Support\Cedis;
 use Carbon\CarbonImmutable;
@@ -10,6 +9,7 @@ use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -17,13 +17,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $id
  * @property string|null $full_name
  * @property string $phone_number
- * @property Language|null $preferred_language
+ * @property int|null $preferred_language_id
  * @property int $balance_pesewas
  * @property RegisteredVia $registered_via
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
+ * @property-read Language|null $preferredLanguage
  */
-#[Fillable(['full_name', 'phone_number', 'preferred_language', 'balance_pesewas', 'registered_via'])]
+#[Fillable(['full_name', 'phone_number', 'preferred_language_id', 'balance_pesewas', 'registered_via'])]
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */
@@ -35,7 +36,6 @@ class Customer extends Model
     protected function casts(): array
     {
         return [
-            'preferred_language' => Language::class,
             'balance_pesewas' => 'integer',
             'registered_via' => RegisteredVia::class,
         ];
@@ -59,6 +59,27 @@ class Customer extends Model
     public static function findByPhoneNumber(string $phoneNumber): ?self
     {
         return self::query()->where('phone_number', self::normalizePhoneNumber($phoneNumber))->first();
+    }
+
+    /**
+     * The saved language. A deleted language counts as none saved.
+     *
+     * @return BelongsTo<Language, $this>
+     */
+    public function preferredLanguage(): BelongsTo
+    {
+        return $this->belongsTo(Language::class, 'preferred_language_id');
+    }
+
+    /**
+     * The saved language when calls can still use it (not disabled or
+     * deleted); otherwise the caller is asked again.
+     */
+    public function usableLanguage(): ?Language
+    {
+        $language = $this->preferredLanguage;
+
+        return $language?->enabled ? $language : null;
     }
 
     /**
