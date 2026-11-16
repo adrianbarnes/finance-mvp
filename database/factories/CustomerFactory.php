@@ -21,7 +21,7 @@ class CustomerFactory extends Factory
     {
         return [
             'full_name' => fake()->name(),
-            'phone_number' => '23324'.fake()->unique()->numerify('#######'),
+            'phone_number' => '+23324'.fake()->unique()->numerify('#######'),
             'preferred_language_id' => fn (): ?int => Language::findByCode('twi')?->id,
             'balance_pesewas' => fake()->numberBetween(0, 500_000),
             'registered_via' => RegisteredVia::Panel,

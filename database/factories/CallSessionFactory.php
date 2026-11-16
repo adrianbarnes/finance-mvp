@@ -23,7 +23,7 @@ class CallSessionFactory extends Factory
     {
         return [
             'customer_id' => Customer::factory(),
-            'caller_number' => fn (array $attributes): string => Customer::query()->find($attributes['customer_id'])->phone_number ?? '233200000000',
+            'caller_number' => fn (array $attributes): string => Customer::query()->find($attributes['customer_id'])->phone_number ?? '+233200000000',
             'channel' => CallChannel::WebRtc,
             'direction' => CallDirection::Inbound,
             'language_id' => fn (): ?int => Language::findByCode('twi')?->id,

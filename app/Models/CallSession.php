@@ -19,6 +19,8 @@ use Illuminate\Support\Str;
  * @property int|null $customer_id
  * @property string $caller_number
  * @property CallChannel $channel
+ * @property string|null $telephony_provider The phone provider that carried the call, e.g. "twilio"
+ * @property string|null $external_call_id The provider's id for the call, e.g. Twilio's CallSid
  * @property CallDirection $direction
  * @property int|null $language_id
  * @property int|null $call_flow_id
@@ -34,7 +36,7 @@ use Illuminate\Support\Str;
  * @property-read CallFlow|null $callFlow
  * @property-read FlowStep|null $currentStep
  */
-#[Fillable(['uuid', 'customer_id', 'caller_number', 'channel', 'direction', 'language_id', 'call_flow_id', 'current_step_id', 'state', 'context', 'started_at', 'ended_at'])]
+#[Fillable(['uuid', 'customer_id', 'caller_number', 'channel', 'telephony_provider', 'external_call_id', 'direction', 'language_id', 'call_flow_id', 'current_step_id', 'state', 'context', 'started_at', 'ended_at'])]
 class CallSession extends Model
 {
     /** @use HasFactory<CallSessionFactory> */

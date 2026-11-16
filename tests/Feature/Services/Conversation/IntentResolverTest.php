@@ -78,6 +78,43 @@ test('finds the language the caller accepted on the language prompt', function (
     'no' => ['daabi', null],
 ]);
 
+test('accepts the language from an answer that sounds like its word when Khaya misspells it', function (string $transcript, ?string $code) {
+    expect(app(IntentResolver::class)->chosenLanguage($transcript)?->code)->toBe($code);
+})->with([
+    'aane heard as anni' => ['Anni', 'twi'],
+    'aane heard as a ɛnne' => ['a ɛnne', 'twi'],
+    'aane heard as baani' => ['baani', 'twi'],
+    'English heard as inglish' => ['inglish', 'eng'],
+    'nothing like any language word' => ['I need', null],
+    'one sound off inside a longer answer is not enough for a short word' => ['me pɛ anni bosea', null],
+]);
+
+test('does not guess when an answer sounds like more than one option', function () {
+    language('twi')->update(['selection_words' => ['aane']]);
+    language('ewe')->update(['selection_words' => ['aana']]);
+
+    expect(app(IntentResolver::class)->chosenLanguage('aani'))->toBeNull()
+        ->and(app(IntentResolver::class)->chosenLanguage('aane')?->code)->toBe('twi');
+});
+
+test('answers yes/no from a misspelled yes or no, and asks again when it could be either', function () {
+    $resolver = app(IntentResolver::class);
+    $branches = branchesOf('Anything else?');
+
+    expect($resolver->matchBranch($branches, 'anni', language('twi'))?->name)->toBe('Yes')
+        ->and($resolver->matchBranch($branches, 'daabe', language('twi'))?->name)->toBe('No')
+        ->and($resolver->matchBranch($branches, 'mmm', language('twi')))->toBeNull();
+
+    language('twi')->update(['yes_words' => ['aane'], 'no_words' => ['aana']]);
+
+    expect($resolver->matchBranch($branches, 'aani', language('twi')->fresh()))->toBeNull();
+});
+
+test('picks a menu option from a long word said slightly differently', function () {
+    expect(app(IntentResolver::class)->matchBranch(branchesOf('Main menu'), 'mepɛ sɛ mehwɛ me sika dodo', language('twi'))?->name)->toBe('Balance')
+        ->and(app(IntentResolver::class)->matchBranch(branchesOf('Main menu'), 'my akaunt', language('twi'))?->name)->toBe('Balance');
+});
+
 test('numbers the languages on the keypad in the order they are enabled', function () {
     $resolver = app(IntentResolver::class);
 

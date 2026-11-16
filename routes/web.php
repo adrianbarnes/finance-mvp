@@ -1,11 +1,15 @@
 <?php
 
 use App\Http\Controllers\CallController;
+use App\Http\Controllers\TelephonyAudioController;
+use App\Http\Controllers\TelephonyController;
+use App\Http\Middleware\VerifyTelephonyRequest;
 use App\Livewire\CallConsole;
 use App\Livewire\CallFlows\Builder as CallFlowBuilder;
 use App\Livewire\Customers\Index as CustomersIndex;
 use App\Livewire\Customers\Show as CustomersShow;
 use App\Livewire\Languages\Index as LanguagesIndex;
+use App\Services\Telephony\TelephonyProviders;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -25,5 +29,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('calls/{call}', [CallController::class, 'destroy'])->name('calls.destroy');
     Route::get('call-turns/{turn}/audio', [CallController::class, 'turnAudio'])->name('call-turns.audio');
 });
+
+/*
+| Prompt audio for phone providers, with an audio Content-Type.
+*/
+Route::get('telephony/audio/{path}', TelephonyAudioController::class)->where('path', '.+')->name('telephony.audio');
+
+/*
+| Phone provider webhooks (config/telephony.php), checked by the provider's
+| request signature instead of a login.
+*/
+Route::middleware(VerifyTelephonyRequest::class)
+    ->prefix('telephony/{provider}')
+    ->whereIn('provider', TelephonyProviders::names())
+    ->name('telephony.')
+    ->group(function () {
+        Route::post('voice', [TelephonyController::class, 'incoming'])->name('voice');
+        Route::post('status', [TelephonyController::class, 'status'])->name('status');
+        Route::post('calls/{call}/answer', [TelephonyController::class, 'answer'])->name('calls.answer');
+        Route::post('calls/{call}/no-input', [TelephonyController::class, 'noInput'])->name('calls.no-input');
+        Route::post('calls/{call}/result', [TelephonyController::class, 'result'])->name('calls.result');
+    });
 
 require __DIR__.'/settings.php';

@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete();
             $table->string('caller_number');
             $table->string('channel');
+            $table->string('telephony_provider')->nullable();
+            $table->string('external_call_id')->nullable()->index();
             $table->string('direction')->default('inbound');
             $table->foreignId('language_id')->nullable()->constrained('languages')->nullOnDelete();
             $table->foreignId('call_flow_id')->nullable()->constrained()->nullOnDelete();

@@ -22,14 +22,26 @@ class DynamicSpeech
     ) {}
 
     /**
-     * @return array{type: string, text: string, language: string, audio_url: string|null}
+     * @return array{type: string, text: string, language: string, audio_url: string|null, telephony_audio_url: string|null}
      */
     public function segment(string $text): array
     {
-        return ['type' => 'speech', 'text' => $text, 'language' => 'en', 'audio_url' => $this->audioUrl($text)];
+        $basePath = $this->synthesize($text);
+        $disk = Storage::disk('public');
+
+        return [
+            'type' => 'speech',
+            'text' => $text,
+            'language' => 'en',
+            'audio_url' => $basePath === null ? null : $disk->url($basePath.'.mp3'),
+            'telephony_audio_url' => $basePath === null ? null : $disk->url($basePath.'-8k.wav'),
+        ];
     }
 
-    private function audioUrl(string $text): ?string
+    /**
+     * The cached audio's path without its extension, or null when none.
+     */
+    private function synthesize(string $text): ?string
     {
         if (! config('services.abena.dynamic_speech')) {
             return null;
@@ -51,6 +63,6 @@ class DynamicSpeech
             }
         }
 
-        return $disk->url($basePath.'.mp3');
+        return $basePath;
     }
 }

@@ -74,7 +74,7 @@ describe('starting a call', function () {
     });
 
     test('a customer with a saved language is greeted by name and asked the purpose of the call', function () {
-        Customer::factory()->create(['phone_number' => '233244000001', 'full_name' => 'Ama Mensah']);
+        Customer::factory()->create(['phone_number' => '+233244000001', 'full_name' => 'Ama Mensah']);
 
         $response = placeCall('024 400 0001');
 
@@ -84,7 +84,7 @@ describe('starting a call', function () {
     });
 
     test('a customer without a saved language hears the language prompt', function () {
-        Customer::factory()->withoutLanguage()->create(['phone_number' => '233244000001']);
+        Customer::factory()->withoutLanguage()->create(['phone_number' => '+233244000001']);
 
         $response = placeCall('0244000001');
 
@@ -98,7 +98,7 @@ describe('starting a call', function () {
 
         $response->assertCreated()->assertJsonPath('call.customer', null);
         expect(promptKeys($response))->toBe(['choose_language', 'choose_language', 'choose_language']);
-        $this->assertDatabaseHas('call_sessions', ['uuid' => $response->json('call.uuid'), 'customer_id' => null, 'caller_number' => '233209999999']);
+        $this->assertDatabaseHas('call_sessions', ['uuid' => $response->json('call.uuid'), 'customer_id' => null, 'caller_number' => '+233209999999']);
     });
 
     test('rejects an invalid caller number', function () {
@@ -108,7 +108,7 @@ describe('starting a call', function () {
 
 describe('choosing a language', function () {
     test('saving the language when the caller says the Twi yes word', function () {
-        $customer = Customer::factory()->withoutLanguage()->create(['phone_number' => '233244000001']);
+        $customer = Customer::factory()->withoutLanguage()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         $response = sendCallInput($uuid, ['text' => 'Aane']);
@@ -119,7 +119,7 @@ describe('choosing a language', function () {
     });
 
     test('saving the language when the caller presses its keypad number', function () {
-        $customer = Customer::factory()->withoutLanguage()->create(['phone_number' => '233244000001']);
+        $customer = Customer::factory()->withoutLanguage()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         sendCallInput($uuid, ['digits' => '1'])->assertJsonPath('reply.state', 'Main menu');
@@ -165,7 +165,7 @@ describe('choosing a language', function () {
     });
 
     test('continuing in Ewe, with the primary language\'s audio where Ewe has no recording', function () {
-        $customer = Customer::factory()->withoutLanguage()->create(['phone_number' => '233244000001']);
+        $customer = Customer::factory()->withoutLanguage()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         $response = sendCallInput($uuid, ['digits' => '2']);
@@ -176,7 +176,7 @@ describe('choosing a language', function () {
     });
 
     test('playing a step\'s own Ewe recording once it has one', function () {
-        Customer::factory()->speaking('ewe')->create(['phone_number' => '233244000001']);
+        Customer::factory()->speaking('ewe')->create(['phone_number' => '+233244000001']);
         $greeting = app(FlowPublisher::class)->live()->clips()->where('key', 'greeting')->sole();
         $greeting->recordings()->updateOrCreate(['language_id' => language('ewe')->id], ['audio_path' => 'flow-audio/woezo.mp3']);
 
@@ -186,7 +186,7 @@ describe('choosing a language', function () {
     });
 
     test('continuing in English, recognised by the browser, when the caller says yes', function () {
-        $customer = Customer::factory()->withoutLanguage()->create(['phone_number' => '233244000001']);
+        $customer = Customer::factory()->withoutLanguage()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         $response = sendCallInput($uuid, ['transcript' => 'Yes']);
@@ -198,7 +198,7 @@ describe('choosing a language', function () {
 
 describe('managed languages', function () {
     test('asking a customer whose saved language was switched off or deleted to choose again', function (string $change) {
-        Customer::factory()->speaking('ewe')->create(['phone_number' => '233244000001']);
+        Customer::factory()->speaking('ewe')->create(['phone_number' => '+233244000001']);
         $change === 'deleted' ? language('ewe')->delete() : language('ewe')->update(['enabled' => false]);
 
         $response = placeCall('0244000001');
@@ -209,7 +209,7 @@ describe('managed languages', function () {
 
     test('offering the languages in their order, each picked by its place', function () {
         language('eng')->update(['position' => 0]);
-        Customer::factory()->withoutLanguage()->create(['phone_number' => '233244000001']);
+        Customer::factory()->withoutLanguage()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         $response = sendCallInput($uuid, ['digits' => '1']);
@@ -221,7 +221,7 @@ describe('managed languages', function () {
     test('asking for the keypad, without counting a misunderstanding, when the call language is keypad only', function () {
         Storage::fake('local');
         $keypadOnly = Language::factory()->keypadOnly()->create();
-        Customer::factory()->create(['phone_number' => '233244000001', 'preferred_language_id' => $keypadOnly->id]);
+        Customer::factory()->create(['phone_number' => '+233244000001', 'preferred_language_id' => $keypadOnly->id]);
         $recognizer = new FakeSpeechRecognizer(['should not be used']);
         $this->app->instance(SpeechRecognizer::class, $recognizer);
         $this->mock(AudioTranscoder::class)->shouldReceive('prepareForRecognition')->andReturn(new PreparedAudio('clean-wav', 1.0));
@@ -244,7 +244,7 @@ describe('managed languages', function () {
 
 describe('published and draft flows', function () {
     test('calls use the published flow, and the draft only when testing it', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $draft = app(FlowPublisher::class)->draft();
         $greeting = $draft->steps()->where('name', 'Greeting')->sole();
         $greeting->update(['name' => 'Draft greeting']);
@@ -260,7 +260,7 @@ describe('published and draft flows', function () {
     });
 
     test('a call in progress keeps the version it started on after publishing', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
         $draft = app(FlowPublisher::class)->draft();
         $draft->steps()->where('name', 'Balance')->where('type', 'branch')->sole()->update(['keypad_digit' => '7']);
@@ -273,7 +273,7 @@ describe('published and draft flows', function () {
     });
 
     test('runs steps added in the builder', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $draft = app(FlowPublisher::class)->draft();
         $editor = app(FlowEditor::class);
         $branch = $draft->steps()->where('name', 'Balance')->where('type', 'branch')->sole();
@@ -287,7 +287,7 @@ describe('published and draft flows', function () {
     });
 
     test('takes the otherwise branch when it has steps, without counting a misunderstanding', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $draft = app(FlowPublisher::class)->draft();
         $otherwise = $draft->steps()->where('name', 'Otherwise')->whereHas('parent', fn ($query) => $query->where('name', 'Main menu'))->sole();
         app(FlowEditor::class)->addStep($draft, $otherwise, 0, StepType::EndCall->value);
@@ -301,7 +301,7 @@ describe('published and draft flows', function () {
 describe('when remembering languages is switched off', function () {
     test('asks a customer with a saved language to choose again', function () {
         app(ConversationSettings::class)->setRemembersLanguage(false);
-        Customer::factory()->create(['phone_number' => '233244000001', 'preferred_language_id' => language('twi')->id]);
+        Customer::factory()->create(['phone_number' => '+233244000001', 'preferred_language_id' => language('twi')->id]);
 
         $response = placeCall('0244000001');
 
@@ -310,7 +310,7 @@ describe('when remembering languages is switched off', function () {
 
     test('uses the chosen language for the call without saving it', function () {
         app(ConversationSettings::class)->setRemembersLanguage(false);
-        $customer = Customer::factory()->create(['phone_number' => '233244000001', 'preferred_language_id' => language('twi')->id]);
+        $customer = Customer::factory()->create(['phone_number' => '+233244000001', 'preferred_language_id' => language('twi')->id]);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         $response = sendCallInput($uuid, ['digits' => '2']);
@@ -328,13 +328,13 @@ describe('when remembering languages is switched off', function () {
 
         sendCallInput($uuid, ['text' => 'aane'])->assertJsonPath('reply.state', 'Main menu');
 
-        $this->assertDatabaseHas('customers', ['phone_number' => '233209999999', 'preferred_language_id' => null]);
+        $this->assertDatabaseHas('customers', ['phone_number' => '+233209999999', 'preferred_language_id' => null]);
     });
 });
 
 describe('browser-recognised speech', function () {
     test('records a browser transcript as a speech turn and answers it', function () {
-        Customer::factory()->create(['phone_number' => '233244000001', 'preferred_language_id' => language('eng')->id, 'balance_pesewas' => 9_900]);
+        Customer::factory()->create(['phone_number' => '+233244000001', 'preferred_language_id' => language('eng')->id, 'balance_pesewas' => 9_900]);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         $response = sendCallInput($uuid, ['transcript' => 'what is my balance']);
@@ -345,7 +345,7 @@ describe('browser-recognised speech', function () {
     });
 
     test('rejects a request that sends a transcript and digits together', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         sendCallInput($uuid, ['transcript' => 'yes', 'digits' => '1'])->assertUnprocessable()->assertJsonValidationErrors('transcript');
@@ -354,7 +354,7 @@ describe('browser-recognised speech', function () {
 
 describe('misunderstood answers', function () {
     test('starting the count again after an answer is understood', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
         sendCallInput($uuid, ['text' => 'hmm']);
         sendCallInput($uuid, ['text' => 'hmm']);
@@ -369,7 +369,7 @@ describe('misunderstood answers', function () {
     });
 
     test('ending the call when the main menu request is not understood three times', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
         sendCallInput($uuid, ['text' => 'hmm']);
         sendCallInput($uuid, ['text' => 'hmm']);
@@ -381,7 +381,7 @@ describe('misunderstood answers', function () {
     });
 
     test('not counting an amount that was understood but is out of range', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
         sendCallInput($uuid, ['digits' => '2']);
         sendCallInput($uuid, ['text' => 'fifty']);
@@ -406,7 +406,7 @@ describe('signing up an unknown caller', function () {
             ->and(spokenTexts($nameResponse))->toBe(['Kwesi Mensah'])
             ->and(promptKeys($response))->toBe(['registered', 'main_menu']);
         $this->assertDatabaseHas('customers', [
-            'phone_number' => '233209999999',
+            'phone_number' => '+233209999999',
             'full_name' => 'Kwesi Mensah',
             'preferred_language_id' => language('twi')->id,
             'balance_pesewas' => 0,
@@ -440,7 +440,7 @@ describe('signing up an unknown caller', function () {
 
 describe('self-service actions', function () {
     test('reading out the balance in English', function () {
-        Customer::factory()->create(['phone_number' => '233244000001', 'balance_pesewas' => 125_050]);
+        Customer::factory()->create(['phone_number' => '+233244000001', 'balance_pesewas' => 125_050]);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         $response = sendCallInput($uuid, ['text' => 'me pɛ sɛ mehwɛ me sika dodoɔ']);
@@ -451,7 +451,7 @@ describe('self-service actions', function () {
     });
 
     test('taking a loan application spoken with English amounts', function () {
-        $customer = Customer::factory()->create(['phone_number' => '233244000001']);
+        $customer = Customer::factory()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
         sendCallInput($uuid, ['text' => 'me pɛ bosea']);
         sendCallInput($uuid, ['text' => 'one thousand five hundred cedis']);
@@ -471,7 +471,7 @@ describe('self-service actions', function () {
     });
 
     test('taking the loan amount from keypad digits ending with hash', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
         sendCallInput($uuid, ['digits' => '2']);
 
@@ -482,7 +482,7 @@ describe('self-service actions', function () {
     });
 
     test('asking for the amount again when it is outside the allowed range', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
         sendCallInput($uuid, ['digits' => '2']);
 
@@ -494,7 +494,7 @@ describe('self-service actions', function () {
     });
 
     test('cancelling the application when the caller does not confirm', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
         sendCallInput($uuid, ['digits' => '2']);
         sendCallInput($uuid, ['digits' => '1000#']);
@@ -507,7 +507,7 @@ describe('self-service actions', function () {
     });
 
     test('reading out the status of the latest application', function () {
-        $customer = Customer::factory()->create(['phone_number' => '233244000001']);
+        $customer = Customer::factory()->create(['phone_number' => '+233244000001']);
         LoanApplication::factory()->for($customer)->create(['status' => LoanApplicationStatus::Pending, 'created_at' => now()->subWeek()]);
         LoanApplication::factory()->for($customer)->create(['status' => LoanApplicationStatus::Approved, 'reference' => 'LN0042', 'amount_pesewas' => 200_000]);
         $uuid = placeCall('0244000001')->json('call.uuid');
@@ -520,7 +520,7 @@ describe('self-service actions', function () {
 
     test('reading out the next repayment of a disbursed loan', function () {
         $this->travelTo('2026-11-12 09:00:00');
-        $customer = Customer::factory()->create(['phone_number' => '233244000001']);
+        $customer = Customer::factory()->create(['phone_number' => '+233244000001']);
         LoanApplication::factory()->for($customer)->disbursed()->create(['next_repayment_pesewas' => 36_500, 'next_repayment_due_on' => '2026-11-22']);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
@@ -531,7 +531,7 @@ describe('self-service actions', function () {
     });
 
     test('telling the caller when no repayment is due', function () {
-        $customer = Customer::factory()->create(['phone_number' => '233244000001']);
+        $customer = Customer::factory()->create(['phone_number' => '+233244000001']);
         LoanApplication::factory()->for($customer)->create(['status' => LoanApplicationStatus::Pending]);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
@@ -541,7 +541,7 @@ describe('self-service actions', function () {
     });
 
     test('telling the caller agents are not available yet', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         $response = sendCallInput($uuid, ['text' => 'I want to speak to an agent']);
@@ -551,7 +551,7 @@ describe('self-service actions', function () {
     });
 
     test('ending the call when the caller has nothing else to ask', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
         sendCallInput($uuid, ['digits' => '1']);
 
@@ -565,7 +565,7 @@ describe('self-service actions', function () {
 describe('spoken utterances', function () {
     test('transcribing the cleaned-up audio in the call language and answering', function () {
         Storage::fake('local');
-        Customer::factory()->create(['phone_number' => '233244000001', 'balance_pesewas' => 5_000]);
+        Customer::factory()->create(['phone_number' => '+233244000001', 'balance_pesewas' => 5_000]);
         $recognizer = new FakeSpeechRecognizer(['me sika dodoɔ']);
         $this->app->instance(SpeechRecognizer::class, $recognizer);
         $this->mock(AudioTranscoder::class)->shouldReceive('prepareForRecognition')->once()->andReturn(new PreparedAudio('clean-wav', 1.4));
@@ -581,7 +581,7 @@ describe('spoken utterances', function () {
 
     test('treating audio without speech as no input without calling the recognizer', function () {
         Storage::fake('local');
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $recognizer = new FakeSpeechRecognizer(['should not be used']);
         $this->app->instance(SpeechRecognizer::class, $recognizer);
         $this->mock(AudioTranscoder::class)->shouldReceive('prepareForRecognition')->andReturn(new PreparedAudio('', 0.0));
@@ -595,7 +595,7 @@ describe('spoken utterances', function () {
 
     test('asking for the keypad when the speech quota is used up', function () {
         Storage::fake('local');
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $this->app->instance(SpeechRecognizer::class, new FakeSpeechRecognizer([new SpeechQuotaExceeded(SpeechQuotaExceeded::Monthly)]));
         $this->mock(AudioTranscoder::class)->shouldReceive('prepareForRecognition')->andReturn(new PreparedAudio('clean-wav', 1.0));
         $uuid = placeCall('0244000001')->json('call.uuid');
@@ -607,7 +607,7 @@ describe('spoken utterances', function () {
     });
 
     test('rejects an upload that is not audio', function () {
-        Customer::factory()->create(['phone_number' => '233244000001']);
+        Customer::factory()->create(['phone_number' => '+233244000001']);
         $uuid = placeCall('0244000001')->json('call.uuid');
 
         $response = $this->post(route('calls.utterances.store', $uuid), ['audio' => UploadedFile::fake()->create('notes.pdf', 10, 'application/pdf')], ['Accept' => 'application/json']);

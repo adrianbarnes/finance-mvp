@@ -1,8 +1,24 @@
 <section class="w-full space-y-8">
-    <div>
-        <flux:link :href="route('customers.index')" wire:navigate class="text-sm">&larr; {{ __('Customers') }}</flux:link>
-        <flux:heading size="xl" level="1" class="mt-2">{{ $customer->full_name ?? __('(no name)') }}</flux:heading>
-        <flux:subheading>{{ $customer->phone_number }} &middot; {{ __('registered via :via', ['via' => $customer->registered_via->value]) }}</flux:subheading>
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <flux:link :href="route('customers.index')" wire:navigate class="text-sm">&larr; {{ __('Customers') }}</flux:link>
+            <flux:heading size="xl" level="1" class="mt-2">{{ $customer->full_name ?? __('(no name)') }}</flux:heading>
+            <flux:subheading>{{ $customer->phone_number }} &middot; {{ __('registered via :via', ['via' => $customer->registered_via->value]) }}</flux:subheading>
+        </div>
+
+        <div class="flex flex-col items-end gap-1">
+            <div class="flex gap-2">
+                <flux:button variant="primary" icon="phone-arrow-up-right" wire:click="callPhone" :disabled="$missingTelephonySettings !== []">
+                    {{ __('Call customer') }}
+                </flux:button>
+                <flux:button icon="beaker" wire:click="callPhone(true)" :disabled="$missingTelephonySettings !== []">
+                    {{ __('Call with draft') }}
+                </flux:button>
+            </div>
+            @if ($missingTelephonySettings !== [])
+                <flux:text class="text-xs">{{ __('Set :settings in .env to call phones.', ['settings' => implode(', ', $missingTelephonySettings)]) }}</flux:text>
+            @endif
+        </div>
     </div>
 
     <div class="grid gap-6 lg:grid-cols-2">

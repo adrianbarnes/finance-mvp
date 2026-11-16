@@ -22,7 +22,8 @@ test('voices a phrase once and reuses the cached audio afterwards', function () 
     $second = app(DynamicSpeech::class)->segment('1,250 cedis');
 
     expect($first['audio_url'])->not->toBeNull()
-        ->and($second['audio_url'])->toBe($first['audio_url']);
+        ->and($second['audio_url'])->toBe($first['audio_url'])
+        ->and($first['telephony_audio_url'])->toEndWith('-8k.wav');
     Http::assertSentCount(1);
 });
 
@@ -33,7 +34,7 @@ test('leaves the text for the client to read when synthesis fails', function () 
     Http::fake(['https://abena.test/api/v1/tts/synthesize/' => Http::response(['message' => 'At capacity'], 503)]);
 
     expect(app(DynamicSpeech::class)->segment('1,250 cedis'))
-        ->toBe(['type' => 'speech', 'text' => '1,250 cedis', 'language' => 'en', 'audio_url' => null]);
+        ->toBe(['type' => 'speech', 'text' => '1,250 cedis', 'language' => 'en', 'audio_url' => null, 'telephony_audio_url' => null]);
 });
 
 test('does not call Abena when dynamic speech is switched off', function () {

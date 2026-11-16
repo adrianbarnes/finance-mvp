@@ -61,4 +61,12 @@ class ClipRecording extends Model
     {
         return $this->audio_path === null ? null : Storage::disk('public')->url($this->audio_path);
     }
+
+    /**
+     * The 8 kHz WAV played on phone calls.
+     */
+    public function telephonyAudioUrl(): ?string
+    {
+        return $this->telephony_audio_path === null ? null : Storage::disk('public')->url($this->telephony_audio_path);
+    }
 }

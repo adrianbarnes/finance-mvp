@@ -18,6 +18,21 @@ final class TranscriptNormalizer
     }
 
     /**
+     * A rough key for how a word or phrase sounds, so a transcript that is
+     * spelled differently from the expected word can still match it:
+     * Khaya often writes "aane" (yes) as "anni" or "a ɛnne". Spaces are
+     * dropped, vowels it tends to swap are merged (e/i, o/u), similar
+     * consonants are merged and doubled letters collapse.
+     */
+    public static function soundKey(string $text): string
+    {
+        $key = str_replace(' ', '', self::normalize($text));
+        $key = strtr($key, ['ph' => 'f', 'v' => 'f', 'y' => 'i', 'e' => 'i', 'o' => 'u', 'w' => 'u', 'c' => 'k', 'q' => 'k', 'z' => 's']);
+
+        return preg_replace('/(.)\1+/u', '$1', $key) ?? $key;
+    }
+
+    /**
      * @return list<string>
      */
     public static function words(string $text): array

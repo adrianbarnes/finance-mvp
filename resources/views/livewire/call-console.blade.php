@@ -23,6 +23,25 @@
         </div>
     </div>
 
+    <flux:card class="space-y-3">
+        <div>
+            <flux:heading>{{ __('Call a phone') }}</flux:heading>
+            <flux:text class="text-sm">{{ __('Ring a real phone. Answer it and the IVR flow runs as if that number had called in.') }}</flux:text>
+        </div>
+
+        @if ($missingTelephonySettings !== [])
+            <flux:callout variant="warning" icon="exclamation-triangle" :text="__('Set :settings in .env to call phones.', ['settings' => implode(', ', $missingTelephonySettings)])" />
+        @endif
+
+        <form wire:submit="callPhone" class="flex flex-wrap items-start gap-2">
+            <flux:input wire:model="phoneToCall" list="customer-numbers" placeholder="0244123456" class="max-w-xs" :aria-label="__('Phone number to call')" />
+            <flux:button type="submit" variant="primary" icon="phone-arrow-up-right" :disabled="$missingTelephonySettings !== []">
+                {{ __('Call phone') }}
+            </flux:button>
+        </form>
+        <flux:error name="phoneToCall" />
+    </flux:card>
+
     <div
         wire:ignore
         x-data="callConsole(@js([

@@ -12,7 +12,7 @@ final readonly class AssistantReply
     public const string Ended = 'ended';
 
     /**
-     * @param  list<array{type: string, key?: string, text: string, audio_url?: string|null, language: string}>  $segments
+     * @param  list<array{type: string, key?: string, text: string, audio_url?: string|null, telephony_audio_url?: string|null, language: string}>  $segments
      * @param  string  $state  The step the call now waits on, or "ended"
      * @param  string|null  $intent  What the caller's answer was taken to mean, e.g. the branch picked
      * @param  string|null  $stepType  The type of step the call waits on, e.g. "ask_number"

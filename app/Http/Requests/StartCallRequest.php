@@ -18,7 +18,7 @@ class StartCallRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'caller_number' => ['required', 'string', 'regex:/^\+?[\d\s-]{9,16}$/'],
+            'caller_number' => ['required', 'string', 'phone:INTERNATIONAL,'.config('app.phone_country')],
             'use_draft' => ['sometimes', 'boolean'],
         ];
     }
@@ -29,7 +29,7 @@ class StartCallRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'caller_number.regex' => 'Enter a valid phone number, e.g. 0244123456.',
+            'caller_number.phone' => 'Enter a valid phone number, e.g. 0244123456.',
         ];
     }
 }

@@ -80,6 +80,19 @@ return [
 
     'locale' => env('APP_LOCALE', 'en'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Phone Number Country
+    |--------------------------------------------------------------------------
+    |
+    | Phone numbers typed without a country code (e.g. "0244123456") are read
+    | as numbers in this country (ISO 3166-1 alpha-2). Numbers are stored in
+    | E.164, e.g. "+233244123456".
+    |
+    */
+
+    'phone_country' => env('PHONE_COUNTRY', 'GH'),
+
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),

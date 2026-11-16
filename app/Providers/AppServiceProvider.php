@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Services\Khaya\KhayaSpeechRecognizer;
 use App\Services\Speech\FakeSpeechRecognizer;
 use App\Services\Speech\SpeechRecognizer;
+use App\Services\Telephony\TelephonyProvider;
+use App\Services\Telephony\TelephonyProviders;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Date;
@@ -23,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
             'khaya' => $app->make(KhayaSpeechRecognizer::class),
             default => new FakeSpeechRecognizer,
         });
+
+        $this->app->bind(TelephonyProvider::class, fn (Application $app): TelephonyProvider => $app->make(TelephonyProviders::class)->default());
     }
 
     /**

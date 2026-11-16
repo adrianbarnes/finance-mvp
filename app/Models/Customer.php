@@ -7,16 +7,18 @@ use App\Support\Cedis;
 use Carbon\CarbonImmutable;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Propaganistas\LaravelPhone\PhoneNumber;
 
 /**
  * @property int $id
  * @property string|null $full_name
- * @property string $phone_number
+ * @property string $phone_number In E.164, e.g. "+233244123456"
  * @property int|null $preferred_language_id
  * @property int $balance_pesewas
  * @property RegisteredVia $registered_via
@@ -42,23 +44,33 @@ class Customer extends Model
     }
 
     /**
-     * Normalise a Ghanaian phone number to international digits, e.g.
-     * "024 412 3456" and "+233244123456" both become "233244123456".
+     * A phone number in E.164. Numbers without a country code are read as
+     * numbers in the app's phone country, so "024 412 3456" and
+     * "+233244123456" both become "+233244123456". Null when the number
+     * is not valid.
      */
-    public static function normalizePhoneNumber(string $phoneNumber): string
+    public static function normalizePhoneNumber(string $phoneNumber): ?string
     {
-        $digits = preg_replace('/\D+/', '', $phoneNumber) ?? '';
+        $number = new PhoneNumber($phoneNumber, (string) config('app.phone_country'));
 
-        if (str_starts_with($digits, '0') && strlen($digits) === 10) {
-            return '233'.substr($digits, 1);
-        }
-
-        return $digits;
+        return $number->isValid() ? $number->formatE164() : null;
     }
 
     public static function findByPhoneNumber(string $phoneNumber): ?self
     {
-        return self::query()->where('phone_number', self::normalizePhoneNumber($phoneNumber))->first();
+        $normalized = self::normalizePhoneNumber($phoneNumber);
+
+        return $normalized === null ? null : self::query()->where('phone_number', $normalized)->first();
+    }
+
+    /**
+     * Phone numbers are always saved in E.164.
+     *
+     * @return Attribute<string, string>
+     */
+    protected function phoneNumber(): Attribute
+    {
+        return Attribute::make(set: fn (string $value): string => self::normalizePhoneNumber($value) ?? $value);
     }
 
     /**

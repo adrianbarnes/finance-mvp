@@ -57,7 +57,7 @@ class ConversationEngine
     private const int MaxStepsPerTurn = 100;
 
     /**
-     * @var list<array{type: string, key?: string, text: string, audio_url?: string|null, language: string}>
+     * @var list<array{type: string, key?: string, text: string, audio_url?: string|null, telephony_audio_url?: string|null, language: string}>
      */
     private array $segments = [];
 
@@ -103,17 +103,21 @@ class ConversationEngine
      * Connect a call to the published flow, or to the draft when testing
      * it. A customer's saved language is used from the start.
      *
+     * @param  string|null  $telephonyProvider  The phone provider carrying the call, e.g. "twilio"
+     * @param  string|null  $externalCallId  The provider's id for the call, e.g. Twilio's CallSid
      * @return array{0: CallSession, 1: AssistantReply}
      */
-    public function startCall(string $callerNumber, CallChannel $channel, CallDirection $direction = CallDirection::Inbound, bool $useDraft = false): array
+    public function startCall(string $callerNumber, CallChannel $channel, CallDirection $direction = CallDirection::Inbound, bool $useDraft = false, ?string $telephonyProvider = null, ?string $externalCallId = null): array
     {
         $customer = Customer::findByPhoneNumber($callerNumber);
         $flow = $useDraft ? $this->publisher->draft() : $this->publisher->live();
 
         $call = CallSession::query()->create([
             'customer_id' => $customer?->id,
-            'caller_number' => Customer::normalizePhoneNumber($callerNumber),
+            'caller_number' => Customer::normalizePhoneNumber($callerNumber) ?? $callerNumber,
             'channel' => $channel,
+            'telephony_provider' => $telephonyProvider,
+            'external_call_id' => $externalCallId,
             'direction' => $direction,
             'language_id' => $this->settings->remembersLanguage() ? $customer?->usableLanguage()?->id : null,
             'call_flow_id' => $flow->id,
@@ -594,6 +598,7 @@ class ConversationEngine
             'key' => $clip->key,
             'text' => $recording->text ?? Str::headline($clip->key),
             'audio_url' => $recording?->audioUrl(),
+            'telephony_audio_url' => $recording?->telephonyAudioUrl(),
             'language' => $language->code,
         ];
     }

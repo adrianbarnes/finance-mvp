@@ -41,7 +41,7 @@ class Index extends Component
             ->withCount('loanApplications')
             ->when($this->search !== '', fn ($query) => $query->where(fn ($query) => $query
                 ->where('full_name', 'like', "%{$this->search}%")
-                ->orWhere('phone_number', 'like', '%'.Customer::normalizePhoneNumber($this->search).'%')))
+                ->orWhere('phone_number', 'like', '%'.$this->phoneSearch().'%')))
             ->latest()
             ->limit(100)
             ->get();
@@ -49,15 +49,15 @@ class Index extends Component
 
     public function addCustomer(): void
     {
-        $this->phoneNumber = Customer::normalizePhoneNumber($this->phoneNumber);
+        $this->phoneNumber = Customer::normalizePhoneNumber($this->phoneNumber) ?? $this->phoneNumber;
 
         $validated = $this->validate([
             'fullName' => ['nullable', 'string', 'max:100'],
-            'phoneNumber' => ['required', 'regex:/^233\d{9}$/', Rule::unique('customers', 'phone_number')],
+            'phoneNumber' => ['required', 'phone:INTERNATIONAL,'.config('app.phone_country'), Rule::unique('customers', 'phone_number')],
             'preferredLanguage' => ['nullable', Rule::exists('languages', 'code')->where('enabled', true)->whereNull('deleted_at')],
             'openingBalance' => ['required', 'numeric', 'min:0', 'max:10000000'],
         ], [
-            'phoneNumber.regex' => 'Enter a Ghana number, e.g. 0244123456.',
+            'phoneNumber.phone' => 'Enter a valid phone number, e.g. 0244123456 or +233244123456.',
         ]);
 
         $customer = Customer::query()->create([
@@ -71,6 +71,15 @@ class Index extends Component
         $this->reset('fullName', 'phoneNumber', 'preferredLanguage', 'openingBalance');
         Flux::modal('add-customer')->close();
         Flux::toast(variant: 'success', text: __('Customer :phone added.', ['phone' => $customer->phone_number]));
+    }
+
+    /**
+     * A full number matches in E.164; part of one matches its digits
+     * without a leading 0, so "0244" finds "+233244…".
+     */
+    private function phoneSearch(): string
+    {
+        return Customer::normalizePhoneNumber($this->search) ?? ltrim((string) preg_replace('/\D+/', '', $this->search), '0');
     }
 
     public function render(): View

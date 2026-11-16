@@ -7,6 +7,8 @@ use App\Models\CallSession;
 use App\Models\Customer;
 use App\Models\Language;
 use App\Models\LoanApplication;
+use App\Services\Telephony\CallNotPlaced;
+use App\Services\Telephony\TelephonyProvider;
 use App\Support\Cedis;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
@@ -44,6 +46,25 @@ class Show extends Component
         $this->customer = $customer;
         $this->fullName = (string) $customer->full_name;
         $this->balance = number_format($customer->balance_pesewas / 100, 2, '.', '');
+    }
+
+    /**
+     * Ring the customer's phone. When they answer, the IVR flow runs as if
+     * they had called in: the published flow, or the draft to test it.
+     */
+    public function callPhone(TelephonyProvider $telephony, bool $useDraft = false): void
+    {
+        try {
+            $telephony->placeCall($this->customer->phone_number, $useDraft);
+        } catch (CallNotPlaced $exception) {
+            Flux::toast(variant: 'danger', text: __('The call could not be placed: :reason', ['reason' => $exception->getMessage()]));
+
+            return;
+        }
+
+        Flux::toast(variant: 'success', text: $useDraft
+            ? __('Ringing :phone with the draft IVR flow.', ['phone' => $this->customer->phone_number])
+            : __('Ringing :phone.', ['phone' => $this->customer->phone_number]));
     }
 
     /**
@@ -161,6 +182,7 @@ class Show extends Component
         return view('livewire.customers.show', [
             'languages' => Language::enabledInOrder(),
             'statuses' => LoanApplicationStatus::cases(),
+            'missingTelephonySettings' => app(TelephonyProvider::class)->missingSettings(),
         ])->title($this->customer->full_name ?? $this->customer->phone_number);
     }
 
